@@ -3,7 +3,7 @@ import json
 import sqlite3
 from typing import Callable
 from browser_history.browsers import Chrome
-
+import platform
 
 def load_user_bookmarks(folders: set[str]):
     """Load user bookmarks"""
@@ -20,7 +20,13 @@ def load_user_bookmarks(folders: set[str]):
 
 def get_path(filename: str) -> str:
     """Returns path to filename from chrome user default folder"""
-    return os.path.join(os.getenv('LOCALAPPDATA'), r'Google\Chrome\User Data\Default', filename)
+    current_system = platform.system()
+    if current_system == "Linux":
+        return os.path.join(os.path.expanduser('~'),".config/google-chrome/Default", filename)
+    elif current_system == "Windows":
+        return os.path.join(os.getenv('LOCALAPPDATA'), r'Google\Chrome\User Data\Default', filename)
+    else:
+        raise Exception("Non supported OS")
 
 
 def get_history(browser: Callable):
@@ -46,7 +52,7 @@ def load_visited_pages():
 
 
 if __name__ == '__main__':
-    folders = {'manga', 'manga1', 'manga2', 'manga3'}
+    folders = {'manga', 'manga1', 'manga2', 'manga3', 'manga4'}
     load_user_bookmarks(folders)
     get_history(Chrome)
-    get_bookmarks(folders)
+    # get_bookmarks(folders)
