@@ -7,15 +7,19 @@ import platform
 
 def load_user_bookmarks(folders: set[str]):
     """Load user bookmarks"""
-    with open(get_path('Bookmarks'), encoding='utf-8') as file:
-        data = json.load(file)
+    try:
+        with open(get_path('Bookmarks'), encoding='utf-8') as file:
+            data = json.load(file)
+    except Exception as e:
+        raise e
 
-    urls = []
+    bookmarks_urls = []
 
     for folder in data['roots']['bookmark_bar']['children']:
         if folder['name'] in folders:
             for bookmark in folder['children']:
-                urls.append(bookmark['url'])
+                bookmarks_urls.append(bookmark['url'])
+
 
 
 def get_path(filename: str) -> str:
@@ -54,5 +58,5 @@ def load_visited_pages():
 if __name__ == '__main__':
     folders = {'manga', 'manga1', 'manga2', 'manga3', 'manga4'}
     load_user_bookmarks(folders)
-    get_history(Chrome)
+    # get_history(Chrome)
     # get_bookmarks(folders)
