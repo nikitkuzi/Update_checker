@@ -16,12 +16,26 @@ class Browser(abc.ABC):
     bookmarks_file: str
     """Name of the (SQLite, JSON or PLIST) file which stores the bookmarks."""
 
-    bookmarks_dir: str
-
     history_file: str
-    history_dir: str
+    """Name of the (SQLite, JSON or PLIST) file which stores the bookmarks."""
 
+    @abc.abstractmethod
+    def get_bookmarks(self):
+        pass
 
+    @abc.abstractmethod
+    def get_history(self):
+        pass
+
+    @abc.abstractmethod
+    @property
+    def history_dir(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    @property
+    def bookmarks_dir(self) -> str:
+        pass
 
 
 class Chrome(Browser):
