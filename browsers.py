@@ -1,5 +1,8 @@
 import abc
 import typing
+from email import utils
+from pathlib import Path
+import platform
 
 
 class Browser(abc.ABC):
@@ -19,22 +22,21 @@ class Browser(abc.ABC):
     history_file: str
     """Name of the (SQLite, JSON or PLIST) file which stores the bookmarks."""
 
+    def __init__(self):
+        if not self.supported_platform():
+            raise Exception("Not supported platform")
+
+    @classmethod
+    def supported_platform(cls):
+        supported = ("Windows", "Linux", "Mac OS")
+        return platform.system() in supported
+
     @abc.abstractmethod
     def get_bookmarks(self):
         pass
 
     @abc.abstractmethod
     def get_history(self):
-        pass
-
-    @abc.abstractmethod
-    @property
-    def history_dir(self) -> str:
-        pass
-
-    @abc.abstractmethod
-    @property
-    def bookmarks_dir(self) -> str:
         pass
 
 
@@ -61,3 +63,15 @@ class Chrome(Browser):
 
     __history_file = "History"
     __bookmarks_file = "Bookmarks"
+
+    __history_dir = "asd"
+    __bookmarks_dir = ""
+
+    def get_bookmarks(self):
+        pass
+
+    def get_history(self):
+        return self.__history_dir
+
+    def history_dir(self) -> str:
+        return ""
