@@ -1,4 +1,5 @@
 import abc
+import os
 import typing
 from email import utils
 from pathlib import Path
@@ -6,28 +7,31 @@ import platform
 
 
 class Browser(abc.ABC):
-    windows_path: typing.Optional[str]
-    mac_path: typing.Optional[str]
-    linux_path: typing.Optional[str]
+    __windows_path: typing.Optional[str]
+    __mac_path: typing.Optional[str]
+    __linux_path: typing.Optional[str]
 
-    profile_support: bool
+    __profile_support: bool
     """Boolean indicating whether the browser supports multiple profiles."""
 
-    profile_dir_prefixes: typing.Optional[typing.List[typing.Any]]
+    __profile_dir_prefixes: typing.Optional[typing.List[typing.Any]]
     """List of possible prefixes for the profile directories."""
 
-    bookmarks_file: str
+    __bookmarks_file: str
     """Name of the (SQLite, JSON or PLIST) file which stores the bookmarks."""
 
-    history_file: str
+    __history_file: str
     """Name of the (SQLite, JSON or PLIST) file which stores the bookmarks."""
 
     def __init__(self):
         if not self.supported_platform():
             raise Exception("Not supported platform")
 
+        self.set_history_path()
+        self.set_bookmarks_path()
+
     @classmethod
-    def supported_platform(cls):
+    def supported_platform(cls) -> bool:
         supported = ("Windows", "Linux", "Mac OS")
         return platform.system() in supported
 
@@ -37,6 +41,14 @@ class Browser(abc.ABC):
 
     @abc.abstractmethod
     def get_history(self):
+        pass
+
+    @abc.abstractmethod
+    def set_history_path(self):
+        pass
+
+    @abc.abstractmethod
+    def set_bookmarks_path(self):
         pass
 
 
@@ -59,19 +71,22 @@ class Chrome(Browser):
     __mac_path = "Library/Application Support/Google/Chrome/"
 
     __profile_support = True
-    __profile_dir_prefixes = ["Default*", "Profile*"]
+    __profile_dir_prefixes = ["Default", "Profile"]
 
     __history_file = "History"
     __bookmarks_file = "Bookmarks"
 
-    __history_dir = "asd"
-    __bookmarks_dir = ""
+    __platform = platform.system()
 
     def get_bookmarks(self):
         pass
 
     def get_history(self):
-        return self.__history_dir
+        pass
 
-    def history_dir(self) -> str:
-        return ""
+    def set_history_path(self):
+        d = os.listdir(os.path.join(os.path.expanduser('~'),self.__linux_path, self.__profile_dir_prefixes[0]))
+        print(sorted(d))
+
+    def set_bookmarks_path(self):
+        pass
