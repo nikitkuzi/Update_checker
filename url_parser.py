@@ -4,7 +4,7 @@ class UrlParser:
         stripped_urls = []
         for url in urls:
             splitted = url.split("/")
-            if splitted[2][0:2] == 'ww':
+            if splitted[2][0] == 'w' and splitted[2][1].isalnum() and splitted[2][2].isalnum():
                 stripped_urls.append(splitted[2][4:])
             else:
                 stripped_urls.append(splitted[2])
