@@ -1,6 +1,8 @@
 from browsers import Chrome
 from url_parser import UrlParser
 from utils import SupportedWebsite
+from db_handler import DbHandler
+
 import time
 from browser_history.generic import Browser
 
@@ -25,7 +27,13 @@ if __name__ == '__main__':
 
     parser = UrlParser()
     test = [visited[0] for visited in bookmarks]
-    parsed = parser.get_url_names(test)
-    # print(UrlParser.get_supported(parsed))
 
+    supported = parser.get_supported(test)
+    # print(supported)
+
+    last_chapters = parser.get_last_chapters(supported)
+    print(last_chapters, supported)
+
+
+    # db = DbHandler()
 
