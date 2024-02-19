@@ -35,7 +35,6 @@ class Browser(abc.ABC):
             raise Exception("Not supported platform")
 
         self._set_path()
-        self.get_bookmarks()
 
     @classmethod
     def _supported_platform(cls) -> bool:
@@ -43,7 +42,11 @@ class Browser(abc.ABC):
         return platform.system() in supported
 
     @abc.abstractmethod
-    def get_bookmarks(self):
+    def set_bookmark_folders(self, folders: list[str]) -> None:
+        pass
+
+    @abc.abstractmethod
+    def get_bookmarks(self) -> list[tuple[str, str]]:
         pass
 
     @abc.abstractmethod
@@ -52,10 +55,6 @@ class Browser(abc.ABC):
 
     @abc.abstractmethod
     def _set_path(self) -> None:
-        pass
-
-    @abc.abstractmethod
-    def set_bookmarks_path(self):
         pass
 
 
@@ -86,29 +85,32 @@ class Chrome(Browser):
     __history_file = "History"
     __bookmarks_file = "Bookmarks"
 
-    def get_bookmarks(self):
+    def get_bookmarks(self) -> list[tuple[str, str]]:
         try:
             with open(self.__path_to_bookmarks) as file:
                 data = json.load(file)
         except Exception as e:
             raise e
         bookmarks = []
+        for bookmarks_bar in data["roots"]:
+            for folders in data["roots"][bookmarks_bar]["children"]:
+                if folders["name"] in self.__bookmark_folders:
+                    for bookmark in folders["children"]:
+                        bookmarks.append((bookmark["name"], bookmark["url"]))
 
-        print(data["roots"]["other"])
-        # for line in data["roots"]["bookmark_bar"]["children"]:
-            # print(line["name"])
+        return bookmarks
 
     def get_history(self):
         pass
 
-    def __get_path_to_profile(self) -> str:
+    def _get_path_to_profile(self) -> str:
         return os.path.join(Path.home(), self.__platform_paths[self.__platform],
                             self.__current_profile)
 
     def _set_path(self) -> None:
-        path_to_profile = self.__get_path_to_profile()
+        path_to_profile = self._get_path_to_profile()
         self.__path_to_history = os.path.join(path_to_profile, "History")
         self.__path_to_bookmarks = os.path.join(path_to_profile, "Bookmarks")
 
-    def set_bookmarks_path(self):
-        pass
+    def set_bookmark_folders(self, folders: list[str]) -> None:
+        self.__bookmark_folders = folders
