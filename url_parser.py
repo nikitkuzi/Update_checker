@@ -3,7 +3,7 @@ from utils import SupportedWebsite
 
 class UrlParser:
 
-    def get_url_names(self, urls: list[str]) -> list[str]:
+    def __get_url_names(self, urls: list[str]) -> list[str]:
         stripped_urls = []
         for url in urls:
             splitted = url.split("/")
@@ -11,8 +11,15 @@ class UrlParser:
                 stripped_urls.append(splitted[2][4:])
             else:
                 stripped_urls.append(splitted[2])
-        print(self.get_supported(stripped_urls))
         return stripped_urls
 
     def get_supported(self, urls):
-        return list(filter(SupportedWebsite.supported_website, urls))
+        stripped_urls = self.__get_url_names(urls)
+        supported = []
+        for full, strip in zip(urls, stripped_urls):
+            if SupportedWebsite.supported_website(strip):
+                supported.append(full)
+        return supported
+
+    def get_last_chapter(self, urls: list[str]) -> str:
+        req = request
