@@ -1,11 +1,8 @@
 import platform
 
 
-class LoadDir:
-    def __init__(self, dir: str, profiles: list[str]):
-        self.platform = platform.system()
-        self.dir = dir
-        self.profiles = profiles
-
-    def get_path(self):
-        pass
+class SupportedWebsite:
+    __supported = {"reaperscans.com"}
+    @classmethod
+    def supported_website(cls, url: str) -> bool:
+        return url in cls.__supported
