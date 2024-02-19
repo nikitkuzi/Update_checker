@@ -1,5 +1,9 @@
-from utils import SupportedWebsite
+import re
+import time
+import urllib
 
+from utils import SupportedWebsite
+import requests
 
 class UrlParser:
 
@@ -21,5 +25,13 @@ class UrlParser:
                 supported.append(full)
         return supported
 
-    def get_last_chapter(self, urls: list[str]) -> str:
-        req = request
+    def get_last_chapters(self, urls: list[str]) -> list[str]:
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+        headers = {"User-Agent":user_agent}
+        chapters = []
+        for url in urls:
+            req = requests.get(url,headers=headers)
+            chapters.append(re.search("Chapter.+[0-9]", req.text).group(0))
+            time.sleep(1)
+            break
+        return chapters
