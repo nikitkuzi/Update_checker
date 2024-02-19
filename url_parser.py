@@ -1,3 +1,6 @@
+from utils import SupportedWebsite
+
+
 class UrlParser:
 
     def get_url_names(self, urls: list[str]) -> list[str]:
@@ -8,5 +11,8 @@ class UrlParser:
                 stripped_urls.append(splitted[2][4:])
             else:
                 stripped_urls.append(splitted[2])
+        print(self.get_supported(stripped_urls))
         return stripped_urls
 
+    def get_supported(self, urls):
+        return list(filter(SupportedWebsite.supported_website, urls))
