@@ -1,8 +1,9 @@
 import abc
 import json
 import os
+import shutil
 import typing
-from email import utils
+import sqlite3
 from pathlib import Path
 import platform
 
@@ -29,6 +30,7 @@ class Browser(abc.ABC):
     __path_to_bookmarks: str
 
     __bookmark_folders: list[str]
+    """Name of folders which contains all of the needed bookmarks"""
 
     def __init__(self):
         if not self._supported_platform():
@@ -50,7 +52,7 @@ class Browser(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_history(self):
+    def get_history(self) -> list[tuple[str, str, str]]:
         pass
 
     @abc.abstractmethod
@@ -85,12 +87,28 @@ class Chrome(Browser):
     __history_file = "History"
     __bookmarks_file = "Bookmarks"
 
+    __history_sql = """
+            SELECT
+                datetime(
+                    visits.visit_time/1000000-11644473600, 'unixepoch', 'localtime'
+                ) as 'visit_time',
+                urls.url,
+                urls.title
+            FROM
+                visits INNER JOIN urls ON visits.url = urls.id
+            WHERE
+                visits.visit_duration > 0
+            ORDER BY
+                visit_time DESC
+        """
+
     def get_bookmarks(self) -> list[tuple[str, str]]:
         try:
             with open(self.__path_to_bookmarks) as file:
                 data = json.load(file)
         except Exception as e:
             raise e
+
         bookmarks = []
         for bookmarks_bar in data["roots"]:
             for folders in data["roots"][bookmarks_bar]["children"]:
@@ -100,8 +118,20 @@ class Chrome(Browser):
 
         return bookmarks
 
-    def get_history(self):
-        pass
+    def get_history(self) -> list[tuple[str, str, str]]:
+        history = []
+        try:
+
+            shutil.copy(self.__path_to_history, ".")
+            con = sqlite3.connect("History")
+            cursor = con.cursor()
+            cursor.execute(self.__history_sql)
+            history = cursor.fetchall()
+            os.remove("History")
+        except Exception as e:
+            raise e
+
+        return history
 
     def _get_path_to_profile(self) -> str:
         return os.path.join(Path.home(), self.__platform_paths[self.__platform],
@@ -114,3 +144,7 @@ class Chrome(Browser):
 
     def set_bookmark_folders(self, folders: list[str]) -> None:
         self.__bookmark_folders = folders
+
+    def set_profile(self, profile: str) -> None:
+        self.__current_profile = profile
+        self._set_path()
