@@ -1,4 +1,5 @@
 import abc
+import json
 import os
 import typing
 from email import utils
@@ -7,14 +8,15 @@ import platform
 
 
 class Browser(abc.ABC):
-    __windows_path: typing.Optional[str]
-    __mac_path: typing.Optional[str]
-    __linux_path: typing.Optional[str]
+    __platform_paths: dict[str, typing.Union[str | None]]
+    # __windows_path: typing.Optional[str]
+    # __mac_path: typing.Optional[str]
+    # __linux_path: typing.Optional[str]
 
     __profile_support: bool
     """Boolean indicating whether the browser supports multiple profiles."""
 
-    __profile_dir_prefixes: typing.Optional[typing.List[typing.Any]]
+    __current_profile: typing.Optional[str]
     """List of possible prefixes for the profile directories."""
 
     __bookmarks_file: str
@@ -23,15 +25,20 @@ class Browser(abc.ABC):
     __history_file: str
     """Name of the (SQLite, JSON or PLIST) file which stores the bookmarks."""
 
+    __path_to_history: str
+    __path_to_bookmarks: str
+
+    __bookmark_folders: list[str]
+
     def __init__(self):
-        if not self.supported_platform():
+        if not self._supported_platform():
             raise Exception("Not supported platform")
 
-        self.set_history_path()
-        self.set_bookmarks_path()
+        self._set_path()
+        self.get_bookmarks()
 
     @classmethod
-    def supported_platform(cls) -> bool:
+    def _supported_platform(cls) -> bool:
         supported = ("Windows", "Linux", "Mac OS")
         return platform.system() in supported
 
@@ -44,7 +51,7 @@ class Browser(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def set_history_path(self):
+    def _set_path(self) -> None:
         pass
 
     @abc.abstractmethod
@@ -66,27 +73,42 @@ class Chrome(Browser):
 
     __name = "Chrome"
 
-    __linux_path = ".config/google-chrome"
-    __windows_path = "AppData/Local/Google/Chrome/User Data"
-    __mac_path = "Library/Application Support/Google/Chrome/"
+    __platform = platform.system()
+    __platform_paths = {"Linux": ".config/google-chrome", "Windows": "AppData/Local/Google/Chrome/User Data",
+                        "Darwin": "Library/Application Support/Google/Chrome/"}
+    # __linux_path = ".config/google-chrome"
+    # __windows_path = "AppData/Local/Google/Chrome/User Data"
+    # __mac_path = "Library/Application Support/Google/Chrome/"
 
     __profile_support = True
-    __profile_dir_prefixes = ["Default", "Profile"]
+    __current_profile = "Default"
 
     __history_file = "History"
     __bookmarks_file = "Bookmarks"
 
-    __platform = platform.system()
-
     def get_bookmarks(self):
-        pass
+        try:
+            with open(self.__path_to_bookmarks) as file:
+                data = json.load(file)
+        except Exception as e:
+            raise e
+        bookmarks = []
+
+        print(data["roots"]["other"])
+        # for line in data["roots"]["bookmark_bar"]["children"]:
+            # print(line["name"])
 
     def get_history(self):
         pass
 
-    def set_history_path(self):
-        d = os.listdir(os.path.join(os.path.expanduser('~'),self.__linux_path, self.__profile_dir_prefixes[0]))
-        print(sorted(d))
+    def __get_path_to_profile(self) -> str:
+        return os.path.join(Path.home(), self.__platform_paths[self.__platform],
+                            self.__current_profile)
+
+    def _set_path(self) -> None:
+        path_to_profile = self.__get_path_to_profile()
+        self.__path_to_history = os.path.join(path_to_profile, "History")
+        self.__path_to_bookmarks = os.path.join(path_to_profile, "Bookmarks")
 
     def set_bookmarks_path(self):
         pass
