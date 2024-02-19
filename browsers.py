@@ -10,9 +10,7 @@ import platform
 
 class Browser(abc.ABC):
     __platform_paths: dict[str, typing.Union[str | None]]
-    # __windows_path: typing.Optional[str]
-    # __mac_path: typing.Optional[str]
-    # __linux_path: typing.Optional[str]
+    """Dictionary containing default paths of supported platforms"""
 
     __profile_support: bool
     """Boolean indicating whether the browser supports multiple profiles."""
@@ -21,10 +19,10 @@ class Browser(abc.ABC):
     """List of possible prefixes for the profile directories."""
 
     __bookmarks_file: str
-    """Name of the (SQLite, JSON or PLIST) file which stores the bookmarks."""
+    """Name of the JSON file which stores the bookmarks."""
 
     __history_file: str
-    """Name of the (SQLite, JSON or PLIST) file which stores the bookmarks."""
+    """Name of the SQLite file which stores the history."""
 
     __path_to_history: str
     __path_to_bookmarks: str
@@ -40,7 +38,7 @@ class Browser(abc.ABC):
 
     @classmethod
     def _supported_platform(cls) -> bool:
-        supported = ("Windows", "Linux", "Mac OS")
+        supported = ("Windows", "Linux", "Darwin")
         return platform.system() in supported
 
     @abc.abstractmethod
@@ -74,7 +72,7 @@ class Chrome(Browser):
 
     __name = "Chrome"
 
-    __platform = platform.system()
+    __current_platform = platform.system()
     __platform_paths = {"Linux": ".config/google-chrome", "Windows": "AppData/Local/Google/Chrome/User Data",
                         "Darwin": "Library/Application Support/Google/Chrome/"}
     # __linux_path = ".config/google-chrome"
@@ -96,13 +94,14 @@ class Chrome(Browser):
                 urls.title
             FROM
                 visits INNER JOIN urls ON visits.url = urls.id
-            WHERE
-                visits.visit_duration > 0
             ORDER BY
                 visit_time DESC
+            LIMIT 5000
         """
+    """Sql query for fetching history data"""
 
     def get_bookmarks(self) -> list[tuple[str, str]]:
+        """Returns list of all bookmarks in selected folders"""
         try:
             with open(self.__path_to_bookmarks) as file:
                 data = json.load(file)
@@ -119,9 +118,9 @@ class Chrome(Browser):
         return bookmarks
 
     def get_history(self) -> list[tuple[str, str, str]]:
+        """Returns readable chrome history of last 5000 visits"""
         history = []
         try:
-
             shutil.copy(self.__path_to_history, ".")
             con = sqlite3.connect("History")
             cursor = con.cursor()
@@ -134,7 +133,7 @@ class Chrome(Browser):
         return history
 
     def _get_path_to_profile(self) -> str:
-        return os.path.join(Path.home(), self.__platform_paths[self.__platform],
+        return os.path.join(Path.home(), self.__platform_paths[self.__current_platform],
                             self.__current_profile)
 
     def _set_path(self) -> None:
