@@ -103,7 +103,7 @@ class Chrome(Browser):
     def get_bookmarks(self) -> list[tuple[str, str]]:
         """Returns list of all bookmarks in selected folders"""
         try:
-            with open(self.__path_to_bookmarks) as file:
+            with open(self.__path_to_bookmarks, encoding="utf-8") as file:
                 data = json.load(file)
         except Exception as e:
             raise e
@@ -126,6 +126,7 @@ class Chrome(Browser):
             cursor = con.cursor()
             cursor.execute(self.__history_sql)
             history = cursor.fetchall()
+            con.close()
             os.remove("History")
         except Exception as e:
             raise e
