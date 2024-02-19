@@ -87,11 +87,11 @@ class Chrome(Browser):
 
     __history_sql = """
             SELECT
+                urls.url,
+                urls.title,
                 datetime(
                     visits.visit_time/1000000-11644473600, 'unixepoch', 'localtime'
-                ) as 'visit_time',
-                urls.url,
-                urls.title
+                ) as 'visit_time'
             FROM
                 visits INNER JOIN urls ON visits.url = urls.id
             ORDER BY
@@ -113,7 +113,7 @@ class Chrome(Browser):
             for folders in data["roots"][bookmarks_bar]["children"]:
                 if folders["name"] in self.__bookmark_folders:
                     for bookmark in folders["children"]:
-                        bookmarks.append((bookmark["name"], bookmark["url"]))
+                        bookmarks.append((bookmark["url"], bookmark["name"]))
 
         return bookmarks
 
