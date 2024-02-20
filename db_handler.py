@@ -35,9 +35,9 @@ class DbHandler:
             else:
                 cur.execute(sql)
             conn.commit()
-            if sql.split()[0].lower() == "select":
-                return cur.fetchall()
-            return None
+        if sql.split()[0].lower() == "select":
+            return cur.fetchall()
+        return None
 
     def __create_dbs(self):
         if not os.path.exists(self.__name):
