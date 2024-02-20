@@ -2,20 +2,19 @@ import abc
 import json
 import os
 import shutil
-import typing
 import sqlite3
 from pathlib import Path
 import platform
 
 
 class Browser(abc.ABC):
-    __platform_paths: dict[str, typing.Union[str | None]]
+    __platform_paths: dict[str, [str | None]]
     """Dictionary containing default paths of supported platforms"""
 
     __profile_support: bool
     """Boolean indicating whether the browser supports multiple profiles."""
 
-    __current_profile: typing.Optional[str]
+    __current_profile: [str | None]
     """List of possible prefixes for the profile directories."""
 
     __bookmarks_file: str
