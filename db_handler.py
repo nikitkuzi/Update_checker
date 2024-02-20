@@ -18,6 +18,13 @@ class DbHandler:
         os.remove(self.__name)
         self.__create_dbs()
 
+    def get_last_data(self):
+        if "chapter" in self.__name:
+            sql = f"select chapter, url from {self.__name}"
+        else:
+            sql = f"select date, url from {self.__name}"
+        return self._execute(sql)
+
     def _execute(self, sql: str,
                  values: [tuple[tuple[str, str]] | list[tuple[str, str]] | None] = None) \
             -> [list[str] | None]:
@@ -49,12 +56,19 @@ class Bookmarked(DbHandler):
     def __init__(self):
         super().__init__(self.__name)
 
-    def get_last_chapters(self):
-        sql = f"select chapter, url from {self.__name}"
-        return self._execute(sql)
-
     def update(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
         """Updates db of last chapters from bookmarked urls.
         values: tuple(chapter,url)"""
         sql = f"update {self.__name} set chapter = ? where url = ?"
         self._execute(sql, values)
+
+
+class History(DbHandler):
+    __name = "last_visited"
+
+    def __init__(self):
+        super().__init__(self.__name)
+
+    def get_last_time(self):
+        sql = f"select max(date) from {self.__name}"
+        return self._execute(sql)
