@@ -35,8 +35,9 @@ class DbHandler:
             else:
                 cur.execute(sql)
             conn.commit()
+            res = cur.fetchall()
         if sql.split()[0].lower() == "select":
-            return cur.fetchall()
+            return res
         return None
 
     def __create_dbs(self):
