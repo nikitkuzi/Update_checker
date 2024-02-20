@@ -32,6 +32,5 @@ class UrlParser:
         for url in urls:
             req = requests.get(url,headers=headers)
             chapters.append(re.search("Chapter.+[0-9]", req.text).group(0))
-            time.sleep(1)
-            break
+            time.sleep(0.5)
         return chapters
