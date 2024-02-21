@@ -86,10 +86,10 @@ class Chrome(Browser):
 
     __history_sql = """
             SELECT
-                urls.url,
                 datetime(
                     visits.visit_time/1000000-11644473600, 'unixepoch', 'localtime'
                 ) as 'visit_time',
+                urls.url,
                 urls.title
             FROM
                 visits INNER JOIN urls ON visits.url = urls.id
