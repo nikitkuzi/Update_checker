@@ -117,7 +117,9 @@ class Chrome(Browser):
         return bookmarks
 
     def get_history(self) -> list[tuple[str, str, str]]:
-        """Returns readable chrome history of last 5000 visits"""
+        """Returns readable chrome history of last 5000 visits.
+        rtype: list(tuple(date, url, name))
+        """
         history = []
         try:
             shutil.copy(self.__path_to_history, ".")
