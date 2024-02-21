@@ -86,10 +86,10 @@ class Chrome(Browser):
 
     __history_sql = """
             SELECT
+                urls.url,
                 datetime(
                     visits.visit_time/1000000-11644473600, 'unixepoch', 'localtime'
                 ) as 'visit_time',
-                urls.url,
                 urls.title
             FROM
                 visits INNER JOIN urls ON visits.url = urls.id
@@ -118,7 +118,7 @@ class Chrome(Browser):
 
     def get_history(self) -> list[tuple[str, str, str]]:
         """Returns readable chrome history of last 5000 visits.
-        rtype: list(tuple(date, url, name))
+        rtype: list(tuple(url, date, name))
         """
         history = []
         try:
