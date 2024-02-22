@@ -2,7 +2,10 @@ import re
 import time
 import urllib
 import asyncio
+from asyncio import Task
+
 import aiohttp
+from aiohttp import ClientSession
 
 from utils import time_it
 from utils import SupportedWebsite
@@ -32,28 +35,13 @@ class UrlParser:
         return supported
 
     @time_it
-    def get_last_chapters1(self, urls: list[str]) -> list[str]:
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-        headers = {"User-Agent": user_agent}
-        chapters = []
-        pattern = re.compile("[Cc]hapter.+[0-9]")
-        for url in urls:
-            req = requests.get(url, headers=headers)
-            soup = BeautifulSoup(req.text, "html.parser")
-            curr = soup.find(text=pattern)
-            print(curr)
-            chapters.append(re.search(pattern, curr).group(0))
-            time.sleep(0.5)
-        return chapters
-
-    @time_it
     def get_last_chapters(self, urls: list[str]) -> list[str]:
-        return asyncio.run(self.__get_last_chapters2(urls))
+        return [task.result() for task in asyncio.run(self.__get_last_chapters2(urls))]
 
-    async def __get_last_chapters2(self, urls: list[str]) -> list[str]:
+    async def __get_last_chapters2(self, urls: list[str]) -> list[Task[str]]:
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
         headers = {"User-Agent": user_agent}
-        my_conn = aiohttp.TCPConnector(limit=5)
+        my_conn = aiohttp.TCPConnector(limit=2)
         async with aiohttp.ClientSession(connector=my_conn, headers=headers) as session:
             tasks = []
             for url in urls:
@@ -63,12 +51,13 @@ class UrlParser:
             await asyncio.gather(*tasks, return_exceptions=True)  # the await must be nest inside of the session
         return tasks
 
-    async def __parse_url(self, url: str, session) -> str:
+    async def __parse_url(self, url: str, session: ClientSession) -> str:
         async with session.get(url) as response:
             result = await response.text()
-            time.sleep(1)
-            pattern = re.compile("[Cc]hapter.+[0-9]")
+
+            pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
             soup = BeautifulSoup(result, "html.parser")
             curr = soup.find(text=pattern)
             # print(curr, result)
+            time.sleep(1.5)
             return re.search(pattern, curr).group(0)

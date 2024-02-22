@@ -1,8 +1,11 @@
 import platform
 import time
+import re
+
 
 class SupportedWebsite:
     __supported = {"reaperscans.com"}
+
     @classmethod
     def supported_website(cls, url: str) -> bool:
         return url in cls.__supported
@@ -16,3 +19,8 @@ def time_it(func):
         return res
 
     return wrapper
+
+
+def strip_chapter(chapters: list[str]):
+    for i in range(len(chapters)):
+        chapters[i] = re.search("[C|c]hapter.{1}[0-9]+\.*[0-9]*", chapters[i]).group(0)
