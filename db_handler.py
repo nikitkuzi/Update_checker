@@ -20,9 +20,9 @@ class DbHandler:
 
     def get_last_data(self):
         if "chapter" in self.__name:
-            sql = f"select chapter, url from {self.__name}"
+            sql = f"select url, chapter from {self.__name}"
         else:
-            sql = f"select date, url from {self.__name}"
+            sql = f"select url, date from {self.__name}"
         return self._execute(sql)
 
     def _execute(self, sql: str,
@@ -69,6 +69,12 @@ class History(DbHandler):
 
     def __init__(self):
         super().__init__(self.__name)
+
+    def update(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
+        """Updates db of last visited urls from bookmarked urls.
+        values: tuple(date,url)"""
+        sql = f"update {self.__name} set date = ? where url = ?"
+        self._execute(sql, values)
 
     def get_last_time(self):
         sql = f"select max(date) from {self.__name}"
