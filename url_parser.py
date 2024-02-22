@@ -15,6 +15,7 @@ import requests
 
 
 class UrlParser:
+    __pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
 
     def __get_url_names(self, urls: list[str]) -> list[str]:
         stripped_urls = []
@@ -26,7 +27,7 @@ class UrlParser:
                 stripped_urls.append(splitted[2])
         return stripped_urls
 
-    def get_supported(self, urls) -> list[str]:
+    def get_supported_urls(self, urls) -> list[str]:
         stripped_urls = self.__get_url_names(urls)
         supported = []
         for full, strip in zip(urls, stripped_urls):
@@ -35,10 +36,10 @@ class UrlParser:
         return supported
 
     @time_it
-    def get_last_chapters(self, urls: list[str]) -> list[str]:
+    def get_last_chapters_from_url(self, urls: list[str]) -> list[str]:
         return [task.result() for task in asyncio.run(self.__get_last_chapters2(urls))]
 
-    async def __get_last_chapters2(self, urls: list[str]) -> list[Task[str]]:
+    async def __get_last_chapters2(self, urls: list[str]) -> list[Task[[tuple[str,str]]]]:
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
         headers = {"User-Agent": user_agent}
         my_conn = aiohttp.TCPConnector(limit=2)
@@ -48,16 +49,13 @@ class UrlParser:
                 task = asyncio.ensure_future(self.__parse_url(url=url, session=session))
                 # print(task.result())
                 tasks.append(task)
-            await asyncio.gather(*tasks, return_exceptions=True)  # the await must be nest inside of the session
+            await asyncio.gather(*tasks, return_exceptions=True)
         return tasks
 
-    async def __parse_url(self, url: str, session: ClientSession) -> str:
+    async def __parse_url(self, url: str, session: ClientSession) -> tuple[str, str]:
         async with session.get(url) as response:
             result = await response.text()
-
-            pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
             soup = BeautifulSoup(result, "html.parser")
-            curr = soup.find(text=pattern)
-            # print(curr, result)
-            time.sleep(1.5)
-            return re.search(pattern, curr).group(0)
+            curr = soup.find(text=self.__pattern)
+            time.sleep(2)
+            return url, re.search(self.__pattern, curr).group(0)
