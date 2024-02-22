@@ -2,7 +2,10 @@ import re
 import time
 import urllib
 
+from utils import time_it
 from utils import SupportedWebsite
+
+from bs4 import BeautifulSoup
 import requests
 
 
@@ -26,12 +29,28 @@ class UrlParser:
                 supported.append(full)
         return supported
 
+    # @time_it
+    # def get_last_chapters(self, urls: list[str]) -> list[str]:
+    #     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+    #     headers = {"User-Agent": user_agent}
+    #     chapters = []
+    #     pattern = re.compile("[Cc]hapter.+[0-9]")
+    #     for url in urls:
+    #         req = requests.get(url, headers=headers)
+    #         chapters.append(re.search(pattern, req.text).group(0))
+    #         time.sleep(0.1)
+    #     return chapters
+
+    @time_it
     def get_last_chapters(self, urls: list[str]) -> list[str]:
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
         headers = {"User-Agent": user_agent}
         chapters = []
+        pattern = re.compile("[Cc]hapter.+[0-9]")
         for url in urls:
             req = requests.get(url, headers=headers)
-            chapters.append(re.search("Chapter.+[0-9]", req.text).group(0))
-            time.sleep(0.5)
+            soup = BeautifulSoup(req.text,"html.parser")
+            curr = soup.find(text=pattern)
+            chapters.append(re.search(pattern, curr).group(0))
+            time.sleep(0.1)
         return chapters
