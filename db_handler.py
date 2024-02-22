@@ -51,7 +51,7 @@ class DbHandler:
                 conn.commit()
 
 
-class Bookmarked(DbHandler):
+class BookmarkedHistory(DbHandler):
     __name = "last_chapters_bookmarked"
 
     def __init__(self):
@@ -64,7 +64,7 @@ class Bookmarked(DbHandler):
         self._execute(sql, values)
 
 
-class History(DbHandler):
+class VisitedHistory(DbHandler):
     __name = "last_visited"
 
     def __init__(self):
