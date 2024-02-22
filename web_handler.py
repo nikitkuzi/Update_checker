@@ -7,11 +7,11 @@ from asyncio import Task
 import aiohttp
 from aiohttp import ClientSession
 
-from utils import time_it
-from utils import SupportedWebsite
+from utils import time_it, DATE_FORMAT, SupportedWebsite
 
 from bs4 import BeautifulSoup
 import requests
+from datetime import datetime, timedelta
 
 
 class WebHandler:
@@ -34,6 +34,24 @@ class WebHandler:
             if SupportedWebsite.supported_website(strip):
                 supported.append(full)
         return supported
+
+    def get_last_visited_urls_with_date(self, supported_urls: list[str], history: list[tuple[str, str, str]]) -> list[
+        tuple[str, str]]:
+        supported_history_set = set(supported_urls)
+        last_visited = []
+        date_for_url_not_found_in_history = (datetime.now().replace(microsecond=0) - timedelta(days=365)).strftime(
+            DATE_FORMAT)
+        for i in range(len(history)):
+            if not supported_history_set:
+                break
+            if history[i][0] in supported_history_set:
+                supported_history_set.remove(history[i][0])
+                last_visited.append(history[i][:2])
+        # if there are some bookmarked urls which are not in browser history
+        # just add them with some default value
+        for url in supported_urls:
+            last_visited.append((url, date_for_url_not_found_in_history))
+        return last_visited
 
     @time_it
     def get_last_chapters_from_url(self, urls: list[str]) -> list[str]:

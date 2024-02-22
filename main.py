@@ -1,12 +1,16 @@
+from datetime import datetime, timedelta
+
+import utils
 from browsers import Chrome
-from url_parser import UrlParser
+from web_handler import WebHandler
 from browser_history.generic import Browser
-from db_handler import Bookmarked, History
-from utils import strip_chapter
+from db_handler import BookmarkedHistory, VisitedHistory
+from utils import DATE_FORMAT
 
 import time
 
 import asyncio
+
 
 
 
@@ -18,38 +22,30 @@ if __name__ == '__main__':
     bookmarks = browser.get_bookmarks()
     history = browser.get_history()
 
-    parser = UrlParser()
-    test = [visited[0] for visited in bookmarks]
+    parser = WebHandler()
+    bookmarked_urls = [bookmark[0] for bookmark in bookmarks]
+    supported_urls = parser.get_supported_urls(bookmarked_urls)
 
-    supported = parser.get_supported(test)
+    last_visited_urls_with_date = parser.get_last_visited_urls_with_date(supported_urls, history)
+    print(last_visited_urls_with_date)
+    dbvh = VisitedHistory()
+    # dbvh.reset()
+    # dbvh.create(last_visited_urls_with_date)
+    # print(dbvh.get_last_data())
+    # print(dbvh.get_last_time())
 
-    supported_history_set = set(supported)
-    last_visited = []
-    for i in range(len(history)):
-        if not supported_history_set:
-            break
-        if history[i][0] in supported_history_set:
-            supported_history_set.remove(history[i][0])
-            last_visited.append(history[i][:2])
-    # print(last_visited)
-    # for _ in range(1):
-    #     last_chapters = parser.get_last_chapters(supported[:3])
-    #     time.sleep(10)
-    # print(last_chapters)
-    # print(supported)
-    last_chapters = parser.get_last_chapters(supported)
-        # time.sleep(10)
-    print(last_chapters)
-    # last_chapters = ['Chapter 217', 'Chapter 94', 'Chapter 110', 'Chapter 132', 'Chapter 108', 'Chapter 160', 'Chapter 112.5', 'Chapter 114', 'Chapter 100 - Season 1', 'Chapter 105.5', 'Chapter 97', 'Chapter 52', 'Chapter 41.5', 'Chapter 48', 'Chapter 34']
+    # url_and_last_chapters = parser.get_last_chapters_from_url(supported_urls)
+    # print(url_and_last_chapters)
+    dbbh = BookmarkedHistory()
+    # dbbh.reset()
+    # dbbh.create(url_and_last_chapters)
+    # print(dbbh.get_last_data())
 
-
-
-    # values = tuple(zip(supported,last_chapters))
-    # # values = tuple([('https://reaperscans.com/comics/4073-overgeared', 'Chapter 217'), ('https://reaperscans.com/comics/2995-perfect-surgeon', 'Chapter 94'), ('https://reaperscans.com/comics/7868-return-of-the-frozen-player', 'Chapter 110')])
-    # print(values)
-    #
-    # db = History()
-    # db.reset()
-    # db.create(last_visited)
-    # print(db.get_last_data())
-    # print(db.get_last_time())
+    supported_set = set(supported_urls)
+    last_visited_chapters = []
+    mx = dbvh.get_last_time()[0][0]
+    date_format = utils.DATE_FORMAT
+    for his in history:
+        print(datetime.strptime(his[1], date_format))
+        print(datetime.strptime(his[1], date_format) < datetime.strptime(mx, date_format))
+        break
