@@ -20,7 +20,7 @@ class DbHandler:
         self._execute(sql)
         self.__create_dbs()
 
-    def get_last_data(self) -> list[str, str]:
+    def get_last_data(self) -> list[tuple[str, str]]:
         if "chapter" in self.__name:
             sql = f"select url, chapter from {self.__name}"
         else:
@@ -29,7 +29,7 @@ class DbHandler:
 
     def _execute(self, sql: str,
                  values: [tuple[tuple[str, str]] | list[tuple[str, str]] | None] = None) \
-            -> [list[str] | None]:
+            -> [list[tuple[str, str]] | None]:
         with sqlite3.connect(self.__db_name) as conn:
             cur = conn.cursor()
             if ";" in sql:
@@ -52,7 +52,7 @@ class DbHandler:
         else:
             sql_create = f"Create table if not exists {self.__name} (url text primary key, date date, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
         with sqlite3.connect(self.__db_name) as conn:
-            conn.executescript(sql_create)
+            conn.execute(sql_create)
             conn.commit()
 
 
@@ -68,9 +68,10 @@ class BookmarkedHistory(DbHandler):
         sql = f"update {self.__name} set chapter = ? where url = ?"
         self._execute(sql, values)
 
-    def delete(self):
-        sql = f"pragma foreign_keys = ON;DELETE from {self.__name} where url = 'https://reaperscans.com/comics/7655-return-of-the-legendary-spear-knight'"
-        self._execute(sql)
+    def delete_bookmarks(self, bookmarks: list[tuple[str, str]]):
+        values = [(bookmark[0],) for bookmark in bookmarks]
+        sql = f"pragma foreign_keys = ON;DELETE from {self.__name} where url = (?)"
+        self._execute(sql, values)
 
 
 class VisitedHistory(DbHandler):
