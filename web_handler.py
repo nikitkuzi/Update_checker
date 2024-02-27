@@ -1,3 +1,4 @@
+import random
 import re
 import time
 import urllib
@@ -55,7 +56,9 @@ class WebHandler:
 
     @time_it
     def get_last_chapters_from_url(self, urls: list[str]) -> list[str]:
-        return [task.result() for task in asyncio.run(self.__get_last_chapters2(urls))]
+        # shuffle to prevent form accessing same website multiple times
+        random.shuffle(urls)
+        return [task.result() for task in asyncio.run(self.__get_last_chapters2(urls)) if task.result()[1] != ""]
 
     async def __get_last_chapters2(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
@@ -75,5 +78,10 @@ class WebHandler:
             result = await response.text()
             soup = BeautifulSoup(result, "html.parser")
             curr = soup.find(text=self.__pattern)
-            time.sleep(2)
-            return url, re.search(self.__pattern, curr).group(0)
+            time.sleep(1.5)
+            try:
+                res = re.search(self.__pattern, curr).group(0)
+            except Exception as e:
+                res = ""
+                # print(e)
+            return url, res
