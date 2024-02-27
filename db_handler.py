@@ -18,7 +18,7 @@ class DbHandler:
         os.remove(self.__name)
         self.__create_dbs()
 
-    def get_last_data(self):
+    def get_last_data(self) -> list[str, str]:
         if "chapter" in self.__name:
             sql = f"select url, chapter from {self.__name}"
         else:
@@ -76,6 +76,6 @@ class VisitedHistory(DbHandler):
         sql = f"update {self.__name} set date = ? where url = ?"
         self._execute(sql, values)
 
-    def get_last_time(self):
+    def get_last_time(self) -> str:
         sql = f"select max(date) from {self.__name}"
-        return self._execute(sql)
+        return self._execute(sql)[0][0]
