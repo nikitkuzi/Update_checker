@@ -5,6 +5,7 @@ import os
 
 class DbHandler:
     __name = None
+    __db_name = "data.db"
 
     def __init__(self, name: str):
         self.__name = name
@@ -15,7 +16,8 @@ class DbHandler:
         self._execute(sql, values)
 
     def reset(self):
-        os.remove(self.__name)
+        sql = f"drop table {self.__name}"
+        self._execute(sql)
         self.__create_dbs()
 
     def get_last_data(self) -> list[str, str]:
@@ -28,8 +30,12 @@ class DbHandler:
     def _execute(self, sql: str,
                  values: [tuple[tuple[str, str]] | list[tuple[str, str]] | None] = None) \
             -> [list[str] | None]:
-        with sqlite3.connect(self.__name) as conn:
+        with sqlite3.connect(self.__db_name) as conn:
             cur = conn.cursor()
+            if ";" in sql:
+                sql = sql.split(";")
+                cur.execute(sql[0])
+                sql = sql[1]
             if values:
                 cur.executemany(sql, values)
             else:
@@ -41,14 +47,13 @@ class DbHandler:
         return None
 
     def __create_dbs(self):
-        if not os.path.exists(self.__name):
-            if "chapter" in self.__name:
-                sql_create = f"CREATE TABLE {self.__name}(url text primary key, chapter text);"
-            else:
-                sql_create = f"Create table {self.__name} (url text primary key, date date);"
-            with sqlite3.connect(self.__name) as conn:
-                conn.executescript(sql_create)
-                conn.commit()
+        if "chapter" in self.__name:
+            sql_create = f"CREATE TABLE if not exists {self.__name}(url text primary key, chapter text)"
+        else:
+            sql_create = f"Create table if not exists {self.__name} (url text primary key, date date, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
+        with sqlite3.connect(self.__db_name) as conn:
+            conn.executescript(sql_create)
+            conn.commit()
 
 
 class BookmarkedHistory(DbHandler):
@@ -62,6 +67,10 @@ class BookmarkedHistory(DbHandler):
         values: tuple(chapter,url)"""
         sql = f"update {self.__name} set chapter = ? where url = ?"
         self._execute(sql, values)
+
+    def delete(self):
+        sql = f"pragma foreign_keys = ON;DELETE from {self.__name} where url = 'https://reaperscans.com/comics/7655-return-of-the-legendary-spear-knight'"
+        self._execute(sql)
 
 
 class VisitedHistory(DbHandler):
