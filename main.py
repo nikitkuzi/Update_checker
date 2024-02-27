@@ -11,9 +11,6 @@ import time
 
 import asyncio
 
-
-
-
 if __name__ == '__main__':
     folders = ['manga', 'manga1', 'manga2', 'manga3', 'manga4']
 
@@ -41,11 +38,5 @@ if __name__ == '__main__':
     # dbbh.create(url_and_last_chapters)
     # print(dbbh.get_last_data())
 
-    supported_set = set(supported_urls)
-    last_visited_chapters = []
-    mx = dbvh.get_last_time()[0][0]
-    date_format = utils.DATE_FORMAT
-    for his in history:
-        print(datetime.strptime(his[1], date_format))
-        print(datetime.strptime(his[1], date_format) < datetime.strptime(mx, date_format))
-        break
+    last_visited_chapters = parser.get_last_visited_from_history(supported_urls, history, dbvh.get_last_time())
+    print(last_visited_chapters)
