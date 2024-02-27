@@ -67,7 +67,7 @@ class WebHandler:
                 last_visited.append(history[i][:2])
         # if there are some bookmarked urls which are not in browser history
         # just add them with some default value
-        for url in supported_urls:
+        for url in supported_history_set:
             last_visited.append((url, date_for_url_not_found_in_history))
         return last_visited
 
@@ -95,10 +95,10 @@ class WebHandler:
             result = await response.text()
             soup = BeautifulSoup(result, "html.parser")
             curr = soup.find(text=self.__pattern)
-            time.sleep(1.5)
+            time.sleep(2)
             try:
                 res = re.search(self.__pattern, curr).group(0)
             except Exception as e:
                 res = ""
-                # print(e)
+                print(e)
             return url, res
