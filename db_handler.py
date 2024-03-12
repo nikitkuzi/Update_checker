@@ -11,10 +11,6 @@ class DbHandler:
         self.__name = name
         self.__create_dbs()
 
-    def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
-        sql = f"Insert or ignore into {self.__name} values(?,?)"
-        self._execute(sql, values)
-
     def reset(self):
         sql = f"drop table {self.__name}"
         self._execute(sql)
@@ -24,7 +20,7 @@ class DbHandler:
         if "chapter" in self.__name:
             sql = f"select url, chapter from {self.__name}"
         else:
-            sql = f"select url, date from {self.__name}"
+            sql = f"select url, chapter, date from {self.__name}"
         return self._execute(sql)
 
     def _execute(self, sql: str,
@@ -50,7 +46,7 @@ class DbHandler:
         if "chapter" in self.__name:
             sql_create = f"CREATE TABLE if not exists {self.__name}(url text primary key, chapter text)"
         else:
-            sql_create = f"Create table if not exists {self.__name} (url text primary key, date date, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
+            sql_create = f"Create table if not exists {self.__name} (url text primary key, chapter text, date date, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
         with sqlite3.connect(self.__db_name) as conn:
             conn.execute(sql_create)
             conn.commit()
@@ -73,6 +69,10 @@ class BookmarkedHistory(DbHandler):
         sql = f"pragma foreign_keys = ON;DELETE from {self.__name} where url = (?)"
         self._execute(sql, values)
 
+    def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
+        sql = f"Insert or ignore into {self.__name} values(?,?)"
+        self._execute(sql, values)
+
 
 class VisitedHistory(DbHandler):
     __name = "last_visited"
@@ -82,10 +82,14 @@ class VisitedHistory(DbHandler):
 
     def update(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
         """Updates db of last visited urls from bookmarked urls.
-        values: tuple(date,url)"""
-        sql = f"update {self.__name} set date = ? where url = ?"
+        values: tuple(date,chapter,url)"""
+        sql = f"update {self.__name} set date = ?, chapter = ? where url = ?"
         self._execute(sql, values)
 
     def get_last_time(self) -> str:
         sql = f"select max(date) from {self.__name}"
         return self._execute(sql)[0][0]
+
+    def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
+        sql = f"Insert or ignore into {self.__name} values(?,?,?)"
+        self._execute(sql, values)
