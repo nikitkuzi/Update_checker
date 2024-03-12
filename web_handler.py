@@ -8,6 +8,7 @@ from asyncio import Task
 import aiohttp
 from aiohttp import ClientSession
 
+import utils
 from utils import time_it, DATE_FORMAT, SupportedWebsite
 
 from bs4 import BeautifulSoup
@@ -19,7 +20,7 @@ class WebHandler:
     __pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
 
     def get_last_visited_from_history(self, supported_urls: list[str], history: list[tuple[str, str, str]],
-                                      last_updated_date: str) -> list[tuple[str, str]]:
+                                      last_updated_date: str) -> list[tuple[str, str, str]]:
         supported_set = set(supported_urls)
 
         date_format = DATE_FORMAT
@@ -30,7 +31,10 @@ class WebHandler:
                 if datetime.strptime(his[1], date_format) < datetime.strptime(last_updated_date, date_format):
                     break
                 if target_url in his[0]:
-                    result.append(his[:2])
+                    if target_url != his[0]:
+                        result.append((target_url, utils.format_chapter(utils.strip_chapter(his[0])), his[1]))
+                    else:
+                        pass
                     break
                 # break
         return result
@@ -54,7 +58,7 @@ class WebHandler:
         return supported
 
     def get_last_visited_urls_with_date(self, supported_urls: list[str], history: list[tuple[str, str, str]]) -> list[
-        tuple[str, str]]:
+        tuple[str, str, str]]:
         supported_history_set = set(supported_urls)
         last_visited = []
         date_for_url_not_found_in_history = (datetime.now().replace(microsecond=0) - timedelta(days=365)).strftime(
@@ -64,11 +68,11 @@ class WebHandler:
                 break
             if history[i][0] in supported_history_set:
                 supported_history_set.remove(history[i][0])
-                last_visited.append(history[i][:2])
+                last_visited.append((history[i][0], "", history[i][1]))
         # if there are some bookmarked urls which are not in browser history
         # just add them with some default value
         for url in supported_history_set:
-            last_visited.append((url, date_for_url_not_found_in_history))
+            last_visited.append((url, "", date_for_url_not_found_in_history))
         return last_visited
 
     @time_it
