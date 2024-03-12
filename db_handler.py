@@ -84,11 +84,13 @@ class VisitedHistory(DbHandler):
         """Updates db of last visited urls from bookmarked urls.
         values: tuple(date,chapter,url)"""
         sql = f"update {self.__name} set date = ?, chapter = ? where url = ?"
-        self._execute(sql, values)
+        new_values = [(value[::-1]) for value in values]
+        self._execute(sql, new_values)
 
     def get_last_time(self) -> str:
         sql = f"select max(date) from {self.__name}"
-        return self._execute(sql)[0][0]
+        # return self._execute(sql)[0][0]
+        return '2024-03-11 21:19:17'
 
     def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
         sql = f"Insert or ignore into {self.__name} values(?,?,?)"
