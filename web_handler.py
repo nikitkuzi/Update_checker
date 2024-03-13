@@ -14,21 +14,20 @@ from utils import time_it, DATE_FORMAT, SupportedWebsite
 from bs4 import BeautifulSoup
 import requests
 from datetime import datetime, timedelta
+from multiprocessing import Pool
 
 
 class WebHandler:
     __pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
 
+    @time_it
     def get_last_visited_from_history(self, supported_urls: list[str], history: list[tuple[str, str, str]],
                                       last_updated_date: str) -> list[tuple[str, str, str]]:
         supported_set = set(supported_urls)
-
         date_format = DATE_FORMAT
         result = []
-        same_urls = {}
         for target_url in supported_set:
             for his in history:
-                # print(datetime.strptime(his[1], date_format))
                 if datetime.strptime(his[1], date_format) < datetime.strptime(last_updated_date, date_format):
                     break
                 if target_url in his[0]:
@@ -78,12 +77,13 @@ class WebHandler:
         return last_visited
 
     @time_it
-    def get_last_chapters_from_url(self, urls: list[str]) -> list[tuple[str,str,str]]:
+    def get_bookmarked_data(self, urls: list[str]) -> list[tuple[str, str, str]]:
         # shuffle to prevent form accessing same website multiple times in a row
         # to reduce the chance of being blocked
         random.shuffle(urls)
         curr_time = datetime.now().replace(microsecond=0)
-        return [(*task.result(), str(curr_time)) for task in asyncio.run(self.__get_last_chapters2(urls)) if task.result()[1] != ""]
+        return [(*task.result(), str(curr_time)) for task in asyncio.run(self.__get_last_chapters2(urls)) if
+                task.result()[1] != ""]
 
     async def __get_last_chapters2(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
