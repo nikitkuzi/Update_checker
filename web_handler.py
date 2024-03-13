@@ -25,18 +25,20 @@ class WebHandler:
 
         date_format = DATE_FORMAT
         result = []
+        same_urls = {}
         for target_url in supported_set:
             for his in history:
                 # print(datetime.strptime(his[1], date_format))
                 if datetime.strptime(his[1], date_format) < datetime.strptime(last_updated_date, date_format):
                     break
                 if target_url in his[0]:
-                    if target_url != his[0]:
+                    # last visited is not main page
+                    if target_url != his[0] and "chapter" in his[0].lower():
                         result.append((target_url, utils.format_chapter(utils.strip_chapter(his[0])), his[1]))
+                    # last visited is main page
                     else:
-                        pass
+                        continue
                     break
-                # break
         return result
 
     def __get_url_names(self, urls: list[str]) -> list[str]:
@@ -76,10 +78,12 @@ class WebHandler:
         return last_visited
 
     @time_it
-    def get_last_chapters_from_url(self, urls: list[str]) -> list[str]:
-        # shuffle to prevent form accessing same website multiple times
+    def get_last_chapters_from_url(self, urls: list[str]) -> list[tuple[str,str,str]]:
+        # shuffle to prevent form accessing same website multiple times in a row
+        # to reduce the chance of being blocked
         random.shuffle(urls)
-        return [task.result() for task in asyncio.run(self.__get_last_chapters2(urls)) if task.result()[1] != ""]
+        curr_time = datetime.now().replace(microsecond=0)
+        return [(*task.result(), str(curr_time)) for task in asyncio.run(self.__get_last_chapters2(urls)) if task.result()[1] != ""]
 
     async def __get_last_chapters2(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
