@@ -18,10 +18,26 @@ class DbHandler:
 
     def get_last_data(self) -> list[tuple[str, str]]:
         if "chapter" in self.__name:
-            sql = f"select url, chapter from {self.__name}"
+            sql = f"select url, chapter, date from {self.__name}"
         else:
             sql = f"select url, chapter, date from {self.__name}"
         return self._execute(sql)
+
+    def get_last_time(self) -> str:
+        sql = f"select max(date) from {self.__name}"
+        # return self._execute(sql)[0][0]
+        return '2024-03-11 21:19:17'
+
+    def update(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
+        """Updates db of last visited urls from bookmarked urls.
+        values: tuple(url,chapter,date)"""
+        sql = f"update {self.__name} set date = ?, chapter = ? where url = ?"
+        formatted_values = [(value[::-1]) for value in values]
+        self._execute(sql, formatted_values)
+
+    def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
+        sql = f"Insert or ignore into {self.__name} values(?,?,?)"
+        self._execute(sql, values)
 
     def _execute(self, sql: str,
                  values: [tuple[tuple[str, str]] | list[tuple[str, str]] | None] = None) \
@@ -44,7 +60,7 @@ class DbHandler:
 
     def __create_dbs(self):
         if "chapter" in self.__name:
-            sql_create = f"CREATE TABLE if not exists {self.__name}(url text primary key, chapter text)"
+            sql_create = f"CREATE TABLE if not exists {self.__name}(url text primary key, chapter text, date date)"
         else:
             sql_create = f"Create table if not exists {self.__name} (url text primary key, chapter text, date date, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
         with sqlite3.connect(self.__db_name) as conn:
@@ -58,19 +74,9 @@ class BookmarkedHistory(DbHandler):
     def __init__(self):
         super().__init__(self.__name)
 
-    def update(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
-        """Updates db of last chapters from bookmarked urls.
-        values: tuple(chapter,url)"""
-        sql = f"update {self.__name} set chapter = ? where url = ?"
-        self._execute(sql, values)
-
     def delete_bookmarks(self, bookmarks: list[tuple[str, str]]):
         values = [(bookmark[0],) for bookmark in bookmarks]
         sql = f"pragma foreign_keys = ON;DELETE from {self.__name} where url = (?)"
-        self._execute(sql, values)
-
-    def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
-        sql = f"Insert or ignore into {self.__name} values(?,?)"
         self._execute(sql, values)
 
 
@@ -79,19 +85,3 @@ class VisitedHistory(DbHandler):
 
     def __init__(self):
         super().__init__(self.__name)
-
-    def update(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
-        """Updates db of last visited urls from bookmarked urls.
-        values: tuple(date,chapter,url)"""
-        sql = f"update {self.__name} set date = ?, chapter = ? where url = ?"
-        new_values = [(value[::-1]) for value in values]
-        self._execute(sql, new_values)
-
-    def get_last_time(self) -> str:
-        sql = f"select max(date) from {self.__name}"
-        # return self._execute(sql)[0][0]
-        return '2024-03-11 21:19:17'
-
-    def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]):
-        sql = f"Insert or ignore into {self.__name} values(?,?,?)"
-        self._execute(sql, values)
