@@ -50,6 +50,17 @@ class WebHandler:
                 stripped_urls.append(splitted[2])
         return stripped_urls
 
+    def get_diff(self, bookmarked: list[tuple[str, str, str]], history: list[tuple[str, str, str]]) -> list[
+        tuple[str, str, str]]:
+        new = {url: (chapter, date) for url, chapter, date in bookmarked}
+        old = {url: (chapter, date) for url, chapter, date in history}
+        diff = {}
+        for url, data in new.items():
+            if url in old:
+                if old[url][0] != data[0]:
+                    diff[url] = data
+        return [(url, *data) for url, data in diff.items()]
+
     def get_supported_urls(self, urls) -> list[str]:
         stripped_urls = self.__get_url_names(urls)
         supported = []
