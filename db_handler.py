@@ -16,9 +16,11 @@ class DbHandler:
         self._execute(sql)
         self.__create_dbs()
 
-    def get_last_data(self) -> list[tuple[str, str, str]]:
+    def get_last_data(self) -> list[tuple[str, str, str]] | list[tuple[str, str]]:
         if "chapter" in self.__name:
             sql = f"select url, chapter, date from {self.__name}"
+        elif "url" in self.__name:
+            sql = f"select url, url_name from {self.__name}"
         else:
             sql = f"select url, chapter, date from {self.__name}"
         return self._execute(sql)
@@ -101,9 +103,6 @@ class UrlNames(DbHandler):
         sql = f"update {self.__name} set url_name = ? where url = ?"
         formatted_values = [(value[::-1]) for value in values]
         self._execute(sql, formatted_values)
-
-    def get_last_data(self) -> None:
-        pass
 
     def get_last_time(self) -> None:
         pass

@@ -50,15 +50,17 @@ class WebHandler:
                 stripped_urls.append(splitted[2])
         return stripped_urls
 
-    def get_diff(self, bookmarked: list[tuple[str, str, str]], history: list[tuple[str, str, str]]) -> list[
-        tuple[str, str, str]]:
+    def get_diff(self, bookmarked: list[tuple[str, str, str]], history: list[tuple[str, str, str]],
+                 names_list: list[tuple[str, str]]) -> list[
+        tuple[str, str, str, str]]:
         new = {url: (chapter, date) for url, chapter, date in bookmarked}
         old = {url: (chapter, date) for url, chapter, date in history}
+        names = {url: name for url, name in names_list}
         diff = {}
         for url, data in new.items():
             if url in old:
                 if old[url][0] != data[0]:
-                    diff[url] = data
+                    diff[url] = (*data, names[url])
         return [(url, *data) for url, data in diff.items()]
 
     def get_supported_urls(self, urls) -> list[str]:
@@ -88,12 +90,13 @@ class WebHandler:
         return last_visited
 
     @time_it
-    def get_bookmarked_data(self, urls: list[str]) -> list[tuple[str, str, str]]:
+    def get_bookmarked_data(self, urls: list[str]) -> list[list[str, str, str, str]]:
         # shuffle to prevent form accessing same website multiple times in a row
         # to reduce the chance of being blocked
         random.shuffle(urls)
         curr_time = datetime.now().replace(microsecond=0)
-        return [(*task.result(), str(curr_time)) for task in asyncio.run(self.__get_last_chapters2(urls)) if
+        return [[task.result()[0], task.result()[1], str(curr_time), task.result()[2]] for task in
+                asyncio.run(self.__get_last_chapters2(urls)) if
                 task.result()[1] != ""]
 
     async def __get_last_chapters2(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
@@ -120,4 +123,4 @@ class WebHandler:
             except Exception as e:
                 res = ""
                 print(e)
-            return url, res
+            return url, res, soup.title.string
