@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 
+import requests
+
 import utils
 from browsers import Chrome
 from web_handler import WebHandler
 from browser_history.generic import Browser
-from db_handler import BookmarkedHistory, VisitedHistory
+from db_handler import BookmarkedHistory, VisitedHistory, UrlNames
 from utils import DATE_FORMAT
 
 import time
@@ -67,4 +69,12 @@ if __name__ == '__main__':
     # dbvh.update(last_visited_chapters)
 
     to_read = parser.get_diff(dbbh.get_last_data(), dbvh.get_last_data())
-    print(to_read)
+    url = 'https://reaperscans.com/comics/4050-swordmasters-youngest-son'
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+    headers = {"User-Agent": user_agent}
+    # req = requests.get(url, headers=headers)
+    # print(req.text)
+
+    test = UrlNames()
+    print(test.__dict__)
+    print(test.)
