@@ -20,7 +20,7 @@ class DbHandler:
         if "chapter" in self.__name:
             sql = f"select url, chapter, date from {self.__name}"
         elif "url" in self.__name:
-            sql = f"select url, url_name from {self.__name}"
+            sql = f"select url, url_name, icon from {self.__name}"
         else:
             sql = f"select url, chapter, date from {self.__name}"
         return self._execute(sql)
@@ -36,7 +36,7 @@ class DbHandler:
         formatted_values = [(value[::-1]) for value in values]
         self._execute(sql, formatted_values)
 
-    def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]) -> None:
+    def create(self, values: list[tuple[str, str, str]]) -> None:
         sql = f"Insert or ignore into {self.__name} values(?,?,?)"
         self._execute(sql, values)
 
@@ -63,7 +63,7 @@ class DbHandler:
         if "chapter" in self.__name:
             sql_create = f"CREATE TABLE if not exists {self.__name}(url text primary key, chapter text, date date)"
         elif "url" in self.__name:
-            sql_create = f"Create table if not exists {self.__name} (url text primary key, url_name text, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
+            sql_create = f"Create table if not exists {self.__name} (url text primary key, url_name text, icon text, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
         else:
             sql_create = f"Create table if not exists {self.__name} (url text primary key, chapter text, date date, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
         self._execute(sql_create)
@@ -88,21 +88,18 @@ class VisitedHistory(DbHandler):
         super().__init__(self.__name)
 
 
-class UrlNames(DbHandler):
+class UrlNamesIcons(DbHandler):
     __name = "url_names"
 
     def __init__(self):
         super().__init__(self.__name)
 
     def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]) -> None:
-        sql = f"Insert or ignore into {self.__name} values(?,?)"
+        sql = f"Insert or ignore into {self.__name} values(?,?,?)"
         self._execute(sql, values)
 
-    def update(self, values: [tuple[tuple[str, str, str]] | list[tuple[str, str, str]]]) -> None:
-        """tuple(url, url_name)"""
-        sql = f"update {self.__name} set url_name = ? where url = ?"
-        formatted_values = [(value[::-1]) for value in values]
-        self._execute(sql, formatted_values)
+    def update(self) -> None:
+        pass
 
     def get_last_time(self) -> None:
         pass

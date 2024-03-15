@@ -18,7 +18,8 @@ from multiprocessing import Pool
 
 
 class WebHandler:
-    __pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
+    __chapter_pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
+    __favicon_pattern = re.compile("^(shortcut icon|icon)$", re.I)
 
     @time_it
     def get_last_visited_from_history(self, supported_urls: list[str], history: list[tuple[str, str, str]],
@@ -55,12 +56,12 @@ class WebHandler:
         tuple[str, str, str, str]]:
         new = {url: (chapter, date) for url, chapter, date in bookmarked}
         old = {url: (chapter, date) for url, chapter, date in history}
-        names = {url: name for url, name in names_list}
+        names = {url: (name, icon) for url, name, icon in names_list}
         diff = {}
         for url, data in new.items():
             if url in old:
                 if old[url][0] != data[0]:
-                    diff[url] = (*data, names[url])
+                    diff[url] = (*data, *names[url])
         return [(url, *data) for url, data in diff.items()]
 
     def get_supported_urls(self, urls) -> list[str]:
@@ -90,12 +91,12 @@ class WebHandler:
         return last_visited
 
     @time_it
-    def get_bookmarked_data(self, urls: list[str]) -> list[list[str, str, str, str]]:
+    def get_bookmarked_data(self, urls: list[str]) -> list[tuple[str, str, str, str]]:
         # shuffle to prevent form accessing same website multiple times in a row
         # to reduce the chance of being blocked
         random.shuffle(urls)
         curr_time = datetime.now().replace(microsecond=0)
-        return [[task.result()[0], task.result()[1], str(curr_time), task.result()[2]] for task in
+        return [(task.result()[0], task.result()[1], str(curr_time), task.result()[2], task.result()[3]) for task in
                 asyncio.run(self.__get_last_chapters2(urls)) if
                 task.result()[1] != ""]
 
@@ -112,15 +113,16 @@ class WebHandler:
             await asyncio.gather(*tasks, return_exceptions=True)
         return tasks
 
-    async def __parse_url(self, url: str, session: ClientSession) -> tuple[str, str]:
+    async def __parse_url(self, url: str, session: ClientSession) -> tuple[str, str, str, str]:
         async with session.get(url) as response:
             result = await response.text()
             soup = BeautifulSoup(result, "html.parser")
-            curr = soup.find(text=self.__pattern)
+            curr = soup.find(text=self.__chapter_pattern)
+            favicon = soup.find_all('link', attrs={'rel': self.__favicon_pattern})[0].get('href')
             time.sleep(2)
             try:
-                res = re.search(self.__pattern, curr).group(0)
+                res = re.search(self.__chapter_pattern, curr).group(0)
             except Exception as e:
                 res = ""
                 print(e)
-            return url, res, soup.title.string
+            return url, res, soup.title.string, favicon
