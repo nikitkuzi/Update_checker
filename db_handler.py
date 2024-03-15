@@ -29,8 +29,7 @@ class DbHandler:
         return '2024-03-11 21:19:17'
 
     def update(self, values: [tuple[tuple[str, str, str]] | list[tuple[str, str, str]]]) -> None:
-        """Updates db of last visited urls from bookmarked urls.
-        values: tuple(url,chapter,date)"""
+        """values: tuple(url,chapter,date)"""
         sql = f"update {self.__name} set date = ?, chapter = ? where url = ?"
         formatted_values = [(value[::-1]) for value in values]
         self._execute(sql, formatted_values)
@@ -61,11 +60,11 @@ class DbHandler:
     def __create_dbs(self) -> None:
         if "chapter" in self.__name:
             sql_create = f"CREATE TABLE if not exists {self.__name}(url text primary key, chapter text, date date)"
+        elif "url" in self.__name:
+            sql_create = f"Create table if not exists {self.__name} (url text primary key, url_name text, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
         else:
             sql_create = f"Create table if not exists {self.__name} (url text primary key, chapter text, date date, foreign key (url) references last_chapters_bookmarked (url) on delete cascade)"
-        with sqlite3.connect(self.__db_name) as conn:
-            conn.execute(sql_create)
-            conn.commit()
+        self._execute(sql_create)
 
 
 class BookmarkedHistory(DbHandler):
@@ -85,3 +84,26 @@ class VisitedHistory(DbHandler):
 
     def __init__(self):
         super().__init__(self.__name)
+
+
+class UrlNames(DbHandler):
+    __name = "url_names"
+
+    def __init__(self):
+        super().__init__(self.__name)
+
+    def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]) -> None:
+        sql = f"Insert or ignore into {self.__name} values(?,?)"
+        self._execute(sql, values)
+
+    def update(self, values: [tuple[tuple[str, str, str]] | list[tuple[str, str, str]]]) -> None:
+        """tuple(url, url_name)"""
+        sql = f"update {self.__name} set url_name = ? where url = ?"
+        formatted_values = [(value[::-1]) for value in values]
+        self._execute(sql, formatted_values)
+
+    def get_last_data(self) -> None:
+        pass
+
+    def get_last_time(self) -> None:
+        pass
