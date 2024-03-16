@@ -8,7 +8,7 @@ from web_handler import WebHandler
 from browser_history.generic import Browser
 from db_handler import BookmarkedHistory, VisitedHistory, UrlNamesIcons
 from utils import DATE_FORMAT
-
+from fastapi import FastAPI
 import time
 
 import asyncio
@@ -51,9 +51,18 @@ if __name__ == '__main__':
     # dbvh.update(last_visited_chapters)
 
     dbnms = UrlNamesIcons()
-    dbnms.reset()
-    dbnms.create(bookmarked_names_and_icons)
+    # dbnms.reset()
+    # dbnms.create(bookmarked_names_and_icons)
     # print(dbnms.get_last_data())
 
     to_read = parser.get_diff(dbbh.get_last_data(), dbvh.get_last_data(), dbnms.get_last_data())
     print(to_read)
+app = FastAPI()
+
+@app.get("/")
+async def root():
+    dbbh = BookmarkedHistory()
+
+    print(dbbh.get_last_data())
+    return dbbh.get_last_data()
+
