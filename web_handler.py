@@ -19,7 +19,8 @@ from multiprocessing import Pool
 
 
 class WebHandler:
-    __chapter_pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
+    # __chapter_pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
+    __chapter_pattern = re.compile("[C|c]h(apter|\.).{1}[0-9]+\.*[0-9]*")
     __favicon_pattern = re.compile("^(shortcut icon|icon)$", re.I)
 
     @time_it
@@ -58,8 +59,14 @@ class WebHandler:
 
     def get_diff(self, bookmarked: list[tuple[str, str, str]], history: list[tuple[str, str, str]],
                  names_list: list[tuple[str, str]]) -> list[
-        tuple[str, str, str, str]]:
-        """Returns the difference between last read and new chapters"""
+        tuple[str, str, str, str, str]]:
+        """Returns the difference between last read and new chapters as a list of tuples with fields:
+        url
+        chapter
+        time
+        url_name
+        favicon_url
+        """
         new = {url: (chapter, date) for url, chapter, date in bookmarked}
         old = {url: (chapter, date) for url, chapter, date in history}
         names = {url: (name, icon) for url, name, icon in names_list}
@@ -125,7 +132,7 @@ class WebHandler:
     async def __get_last_chapters(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
         headers = {"User-Agent": user_agent}
-        my_conn = aiohttp.TCPConnector(limit=2)
+        my_conn = aiohttp.TCPConnector(limit=5)
         async with aiohttp.ClientSession(connector=my_conn, headers=headers) as session:
             tasks = []
             for url in urls:
@@ -142,6 +149,8 @@ class WebHandler:
         url_name
         favicon_url"""
         async with session.get(url) as response:
+            print(response.status)
+            # exit(0)
             await asyncio.sleep(1)
             result = await response.text()
             soup = BeautifulSoup(result, "html.parser")

@@ -6,7 +6,7 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 class SupportedWebsite:
-    __supported = {"reaperscans.com"}
+    __supported = {"reaperscans.com", "chapmanganato.to", "mangakakalot.tv"}
 
     @classmethod
     def supported_website(cls, url: str) -> bool:
