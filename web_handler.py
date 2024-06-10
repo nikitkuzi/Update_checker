@@ -99,7 +99,13 @@ class WebHandler:
     #     return last_visited
 
     @time_it
-    def get_bookmarked_data(self, urls: list[str]) -> list[Record]:
+    def get_bookmarked_data(self, urls: list[str]) -> list[tuple[str, str, str, str, str]]:
+        """Return bookmarked data as a list of tuples with fields:
+        url
+        chapter
+        time
+        url_name
+        favicon_url"""
         # shuffle to prevent form accessing same website multiple times in a row
         # to reduce the chance of being blocked
         random.shuffle(urls)
@@ -108,10 +114,12 @@ class WebHandler:
         #         asyncio.run(self.__get_last_chapters2(urls)) if
         #         task.result()[1] != ""]
         data = []
-        Record = namedtuple("Record", ["url", "chapter", "time", "url_name", "favicon_url"])
+        Bookmark = namedtuple("Bookmark", ["url", "chapter", "time", "url_name", "favicon_url"])
         for task in asyncio.run(self.__get_last_chapters(urls)):
-            if task.result().chapter != "":
-                data.append(Record(task.result().url, task.result().chapter, str(current_time), task.result().url_name, task.result().favicon_url))
+            if task.result():
+                data.append(
+                    Bookmark(task.result().url, task.result().chapter, str(current_time), task.result().url_name,
+                             task.result().favicon_url))
         return data
 
     async def __get_last_chapters(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
@@ -134,17 +142,17 @@ class WebHandler:
         url_name
         favicon_url"""
         async with session.get(url) as response:
+            await asyncio.sleep(1)
             result = await response.text()
             soup = BeautifulSoup(result, "html.parser")
             curr = soup.find(text=self.__chapter_pattern)
             favicon = soup.find_all('link', attrs={'rel': self.__favicon_pattern})[0].get('href')
-            # time.sleep(2)
-            await asyncio.sleep(2)
             try:
                 res = re.search(self.__chapter_pattern, curr).group(0)
             except Exception as e:
                 res = ""
                 print(e)
+                return
             Result = namedtuple("Result", ["url", "chapter", "url_name", "favicon_url"])
             # return url, res, soup.title.string, favicon
             return Result(url, res, soup.title.string, favicon)
