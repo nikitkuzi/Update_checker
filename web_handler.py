@@ -4,6 +4,7 @@ import time
 import urllib
 import asyncio
 from asyncio import Task
+from collections import namedtuple
 
 import aiohttp
 from aiohttp import ClientSession
@@ -22,26 +23,30 @@ class WebHandler:
     __favicon_pattern = re.compile("^(shortcut icon|icon)$", re.I)
 
     @time_it
-    def get_last_visited_from_history(self, supported_urls: list[str], history: list[tuple[str, str, str]],
-                                      last_updated_date: str) -> list[tuple[str, str, str]]:
+    def get_last_visited_supported_chapters_from_history(self, supported_urls: list[str],
+                                                         history: list[tuple[str, str, str]],
+                                                         last_updated_date: str) -> list[tuple[str, str, str]]:
         supported_set = set(supported_urls)
         date_format = DATE_FORMAT
         result = []
         for target_url in supported_set:
             for his in history:
                 if datetime.strptime(his[1], date_format) < datetime.strptime(last_updated_date, date_format):
+                    # handled all, dont need to check previous history
                     break
                 if target_url in his[0]:
                     # last visited is not main page
                     if target_url != his[0] and "chapter" in his[0].lower():
                         result.append((target_url, utils.format_chapter(utils.strip_chapter(his[0])), his[1]))
                     # last visited is main page
+                    # it means that the url in the DB didnt change
                     else:
                         continue
                     break
         return result
 
     def __get_url_names(self, urls: list[str]) -> list[str]:
+        """Format urls and return domain name"""
         stripped_urls = []
         for url in urls:
             splitted = url.split("/")
@@ -54,6 +59,7 @@ class WebHandler:
     def get_diff(self, bookmarked: list[tuple[str, str, str]], history: list[tuple[str, str, str]],
                  names_list: list[tuple[str, str]]) -> list[
         tuple[str, str, str, str]]:
+        """Returns the difference between last read and new chapters"""
         new = {url: (chapter, date) for url, chapter, date in bookmarked}
         old = {url: (chapter, date) for url, chapter, date in history}
         names = {url: (name, icon) for url, name, icon in names_list}
@@ -65,6 +71,7 @@ class WebHandler:
         return [(url, *data) for url, data in diff.items()]
 
     def get_supported_urls(self, urls) -> list[str]:
+        """Returns the list of supported"""
         stripped_urls = self.__get_url_names(urls)
         supported = []
         for full, strip in zip(urls, stripped_urls):
@@ -72,57 +79,72 @@ class WebHandler:
                 supported.append(full)
         return supported
 
-    def get_last_visited_urls_with_date(self, supported_urls: list[str], history: list[tuple[str, str, str]]) -> list[
-        tuple[str, str, str]]:
-        supported_history_set = set(supported_urls)
-        last_visited = []
-        date_for_url_not_found_in_history = (datetime.now().replace(microsecond=0) - timedelta(days=365)).strftime(
-            DATE_FORMAT)
-        for i in range(len(history)):
-            if not supported_history_set:
-                break
-            if history[i][0] in supported_history_set:
-                supported_history_set.remove(history[i][0])
-                last_visited.append((history[i][0], "", history[i][1]))
-        # if there are some bookmarked urls which are not in browser history
-        # just add them with some default value
-        for url in supported_history_set:
-            last_visited.append((url, "", date_for_url_not_found_in_history))
-        return last_visited
+    # def get_last_visited_urls_with_date(self, supported_urls: list[str], history: list[tuple[str, str, str]]) -> list[
+    #     tuple[str, str, str]]:
+    #     supported_history_set = set(supported_urls)
+    #     last_visited = []
+    #     default_date_for_url_not_found_in_history = (datetime.now().replace(microsecond=0) - timedelta(days=365)).strftime(
+    #         DATE_FORMAT)
+    #     for i in range(len(history)):
+    #         if not supported_history_set:
+    #             # handled all
+    #             break
+    #         if history[i][0] in supported_history_set:
+    #             supported_history_set.remove(history[i][0])
+    #             last_visited.append((history[i][0], "", history[i][1]))
+    #     # if there are some bookmarked urls which are not in browser history
+    #     # just add them with some default value
+    #     for url in supported_history_set:
+    #         last_visited.append((url, "", default_date_for_url_not_found_in_history))
+    #     return last_visited
 
     @time_it
-    def get_bookmarked_data(self, urls: list[str]) -> list[tuple[str, str, str, str]]:
+    def get_bookmarked_data(self, urls: list[str]) -> list[Record]:
         # shuffle to prevent form accessing same website multiple times in a row
         # to reduce the chance of being blocked
         random.shuffle(urls)
-        curr_time = datetime.now().replace(microsecond=0)
-        return [(task.result()[0], task.result()[1], str(curr_time), task.result()[2], task.result()[3]) for task in
-                asyncio.run(self.__get_last_chapters2(urls)) if
-                task.result()[1] != ""]
+        current_time = datetime.now().replace(microsecond=0)
+        # return [(task.result()[0], task.result()[1], str(current_time), task.result()[2], task.result()[3]) for task in
+        #         asyncio.run(self.__get_last_chapters2(urls)) if
+        #         task.result()[1] != ""]
+        data = []
+        Record = namedtuple("Record", ["url", "chapter", "time", "url_name", "favicon_url"])
+        for task in asyncio.run(self.__get_last_chapters(urls)):
+            if task.result().chapter != "":
+                data.append(Record(task.result().url, task.result().chapter, str(current_time), task.result().url_name, task.result().favicon_url))
+        return data
 
-    async def __get_last_chapters2(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
+    async def __get_last_chapters(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
         headers = {"User-Agent": user_agent}
         my_conn = aiohttp.TCPConnector(limit=2)
         async with aiohttp.ClientSession(connector=my_conn, headers=headers) as session:
             tasks = []
             for url in urls:
-                task = asyncio.ensure_future(self.__parse_url(url=url, session=session))
+                task = asyncio.create_task(self.__parse_url(url=url, session=session))
                 # print(task.result())
                 tasks.append(task)
             await asyncio.gather(*tasks, return_exceptions=True)
         return tasks
 
     async def __parse_url(self, url: str, session: ClientSession) -> tuple[str, str, str, str]:
+        """Returns named tuple:
+        url
+        chapter
+        url_name
+        favicon_url"""
         async with session.get(url) as response:
             result = await response.text()
             soup = BeautifulSoup(result, "html.parser")
             curr = soup.find(text=self.__chapter_pattern)
             favicon = soup.find_all('link', attrs={'rel': self.__favicon_pattern})[0].get('href')
-            time.sleep(2)
+            # time.sleep(2)
+            await asyncio.sleep(2)
             try:
                 res = re.search(self.__chapter_pattern, curr).group(0)
             except Exception as e:
                 res = ""
                 print(e)
-            return url, res, soup.title.string, favicon
+            Result = namedtuple("Result", ["url", "chapter", "url_name", "favicon_url"])
+            # return url, res, soup.title.string, favicon
+            return Result(url, res, soup.title.string, favicon)

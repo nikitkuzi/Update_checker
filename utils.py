@@ -24,8 +24,10 @@ def time_it(func):
 
 
 def strip_chapter(chapter: str) -> str:
+    """Returns chapter and its number"""
     return re.search("[C|c]hapter.{1}[0-9]+\.*[0-9]*", chapter).group(0)
 
 
 def format_chapter(chapter: str) -> str:
+    """Removes dashes and spaces from the given chapter"""
     return chapter.replace('-', ' ').replace('  ', ' ').capitalize()

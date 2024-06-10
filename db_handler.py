@@ -70,18 +70,25 @@ class DbHandler:
 
 
 class BookmarkedHistory(DbHandler):
+    """Fields:
+    url
+    chapter
+    date"""
     __name = "last_chapters_bookmarked"
 
     def __init__(self):
         super().__init__(self.__name)
 
-    def delete_bookmarks(self, bookmarks: list[tuple[str, str]]) -> None:
-        values = [(bookmark[0],) for bookmark in bookmarks]
+    def delete_bookmarks(self, bookmarks: list[str]) -> None:
         sql = f"pragma foreign_keys = ON;DELETE from {self.__name} where url = (?)"
-        self._execute(sql, values)
+        self._execute(sql, bookmarks)
 
 
 class VisitedHistory(DbHandler):
+    """Fields:
+    url
+    chapter
+    date"""
     __name = "last_visited"
 
     def __init__(self):
@@ -89,14 +96,14 @@ class VisitedHistory(DbHandler):
 
 
 class UrlNamesIcons(DbHandler):
+    """Fields:
+    url
+    url_name
+    icon_url"""
     __name = "url_names"
 
     def __init__(self):
         super().__init__(self.__name)
-
-    def create(self, values: [tuple[tuple[str, str]] | list[tuple[str, str]]]) -> None:
-        sql = f"Insert or ignore into {self.__name} values(?,?,?)"
-        self._execute(sql, values)
 
     def update(self) -> None:
         pass
