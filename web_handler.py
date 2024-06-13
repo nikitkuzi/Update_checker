@@ -7,6 +7,7 @@ from asyncio import Task
 from collections import namedtuple
 
 import aiohttp
+import yarl
 from aiohttp import ClientSession
 
 import utils
@@ -130,7 +131,7 @@ class WebHandler:
         return data
 
     async def __get_last_chapters(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
         headers = {"User-Agent": user_agent}
         my_conn = aiohttp.TCPConnector(limit=5)
         async with aiohttp.ClientSession(connector=my_conn, headers=headers) as session:
@@ -148,19 +149,21 @@ class WebHandler:
         chapter
         url_name
         favicon_url"""
-        async with session.get(url) as response:
-            print(response.status)
-            # exit(0)
+        url = yarl.URL(url, encoded=True)
+        async with session.get(url=url) as response:
+            print(response.status, url)
             await asyncio.sleep(1)
+
             result = await response.text()
-            soup = BeautifulSoup(result, "html.parser")
-            curr = soup.find(text=self.__chapter_pattern)
-            favicon = soup.find_all('link', attrs={'rel': self.__favicon_pattern})[0].get('href')
             try:
+                soup = BeautifulSoup(result, "html.parser")
+                curr = soup.find(text=self.__chapter_pattern)
+                favicon = soup.find_all('link', attrs={'rel': self.__favicon_pattern})[0].get('href')
+
                 res = re.search(self.__chapter_pattern, curr).group(0)
             except Exception as e:
                 res = ""
-                print(e)
+                print("Error, probably server blocked request")
                 return
             Result = namedtuple("Result", ["url", "chapter", "url_name", "favicon_url"])
             # return url, res, soup.title.string, favicon
