@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import sqlite3
+from collections import deque
 from pathlib import Path
 import platform
 
@@ -109,11 +110,23 @@ class Chrome(Browser):
 
         bookmarks = []
         for bookmarks_bar in data["roots"]:
-            for folders in data["roots"][bookmarks_bar]["children"]:
-                if folders["name"] in self.__bookmark_folders:
-                    for bookmark in folders["children"]:
-                        bookmarks.append((bookmark["url"], bookmark["name"]))
-
+            for folders_in_bookmark_bar in data["roots"][bookmarks_bar]["children"]:
+                queue = deque()
+                queue.append(folders_in_bookmark_bar)
+                while queue:
+                    folder_to_check_for_nested = queue.popleft()
+                    # if there are sub folders
+                    # push them to queue to unwind them
+                    if folder_to_check_for_nested['type'] == 'folder' and \
+                            type(folder_to_check_for_nested['children']) == list and \
+                            'children' in folder_to_check_for_nested['children'][0]:
+                        for folder in folder_to_check_for_nested['children']:
+                            queue.append(folder)
+                    # if there are no sub folders
+                    # check if this is the right folder
+                    elif folder_to_check_for_nested["name"] in self.__bookmark_folders:
+                        for bookmark in folder_to_check_for_nested["children"]:
+                            bookmarks.append((bookmark["url"], bookmark["name"]))
         return bookmarks
 
     def get_history(self) -> list[tuple[str, str, str]]:

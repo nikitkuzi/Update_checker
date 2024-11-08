@@ -24,22 +24,19 @@ def strip(urls):
     return stripped_urls
 
 if __name__ == '__main__':
-    folders = ['manga', 'manga1', 'manga2', 'manga3', 'manga4']
+    folders = ['manga11', 'manga', 'manga1', 'manga2', 'manga3', 'manga4', 'manga5', 'manga6', 'manga7']
 
     browser = Chrome()
     browser.set_bookmark_folders(folders)
     bookmarks = browser.get_bookmarks()
     history = browser.get_history()
-
+    print(bookmarks)
+    exit(0)
     parser = WebHandler()
     bookmarked_urls = [bookmark[0] for bookmark in bookmarks]
     supported_urls = parser.get_supported_urls(bookmarked_urls)
-    print(set(strip(bookmarked_urls)))
-    print(set(strip(supported_urls)))
     data = parser.get_bookmarked_data(supported_urls)
-    for bookmark in data:
-        print(bookmark.chapter)
-    print(len(data))
+
     # bookmarked_data = [(bookmark.url, bookmark.chapter, bookmark.time) for bookmark in data]
     # bookmarked_names_and_icons = [(bookmark.url, bookmark.url_name, bookmark.favicon_url) for bookmark in data]
 
