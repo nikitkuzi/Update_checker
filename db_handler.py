@@ -27,8 +27,8 @@ class DbHandler:
 
     def get_last_time(self) -> str:
         sql = f"select max(date) from {self.__name}"
-        # return self._execute(sql)[0][0]
-        return '2024-03-11 21:19:17'
+        return self._execute(sql)[0][0]
+        # return '2024-03-11 21:19:17'
 
     def update(self, values: [tuple[tuple[str, str, str]] | list[tuple[str, str, str]]]) -> None:
         """values: tuple(url,chapter,date)"""
