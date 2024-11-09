@@ -21,7 +21,7 @@ from multiprocessing import Pool
 
 class WebHandler:
     # __chapter_pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
-    __chapter_pattern = re.compile("[C|c]h(apter|\.).{1}[0-9]+\.*[0-9]*")
+    __chapter_pattern = re.compile(" *[C|c]h(apter|\.).{1}[0-9]+\.*[0-9]*")
     __favicon_pattern = re.compile("^(shortcut icon|icon)$", re.I)
 
     @time_it
@@ -150,6 +150,7 @@ class WebHandler:
         url_name
         favicon_url"""
         url = yarl.URL(url, encoded=True)
+
         async with session.get(url=url) as response:
             print(response.status, url)
             await asyncio.sleep(1)
@@ -157,14 +158,14 @@ class WebHandler:
             result = await response.text()
             try:
                 soup = BeautifulSoup(result, "html.parser")
-                curr = soup.find(text=self.__chapter_pattern)
-                favicon = soup.find_all('link', attrs={'rel': self.__favicon_pattern})[0].get('href')
-
-                res = re.search(self.__chapter_pattern, curr).group(0)
+                curr = soup.find(class_=SupportedWebsite.class_to_find_last_chapter(self.__get_url_names([str(url)])[0]))
+                favicon = soup.find('link', attrs={'rel': self.__favicon_pattern}).get('href')
+                res = re.search(self.__chapter_pattern, curr.text).group(0)
             except Exception as e:
                 res = ""
                 print("Error, probably server blocked request")
                 return
             Result = namedtuple("Result", ["url", "chapter", "url_name", "favicon_url"])
+
             # return url, res, soup.title.string, favicon
-            return Result(url, res, soup.title.string, favicon)
+            return Result(str(url), res, soup.title.string, favicon)

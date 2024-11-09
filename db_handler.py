@@ -70,7 +70,8 @@ class DbHandler:
 
 
 class BookmarkedHistory(DbHandler):
-    """Fields:
+    """DB for handling history of bookmarked links
+    Fields:
     url
     chapter
     date"""
@@ -85,7 +86,8 @@ class BookmarkedHistory(DbHandler):
 
 
 class VisitedHistory(DbHandler):
-    """Fields:
+    """DB for handling history of visited links
+    Fields:
     url
     chapter
     date"""
