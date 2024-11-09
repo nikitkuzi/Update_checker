@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime, timedelta
 
 import requests
@@ -17,8 +18,9 @@ def strip(urls):
     stripped_urls = []
     for url in urls:
         splitted = url.split("/")
-        if splitted[2][0] == 'w' and splitted[2][1].isalnum() and splitted[2][2].isalnum():
-            stripped_urls.append(splitted[2][4:])
+        if splitted[2][0] == 'w' and splitted[2][1] == 'w':
+            pos = splitted[2].find('.')
+            stripped_urls.append(splitted[2][pos+1:])
         else:
             stripped_urls.append(splitted[2])
     return stripped_urls
@@ -33,16 +35,16 @@ if __name__ == '__main__':
 
     parser = WebHandler()
     bookmarked_urls = [bookmark[0] for bookmark in bookmarks]
+    print(Counter(strip(bookmarked_urls)))
     supported_urls = parser.get_supported_urls(bookmarked_urls)
 
-    # data = parser.get_bookmarked_data(supported_urls)
+    data = parser.get_bookmarked_data(supported_urls)
     # data = parser.get_bookmarked_data(['https://reaperscans.com/series/overgeared'])
     # data = parser.get_bookmarked_data(['https://chapmanganato.to/manga-ma952557'])
-    data = parser.get_bookmarked_data(['https://chapmanganato.to/manga-ma952557', 'https://reaperscans.com/series/overgeared'])
     print(data)
-    exit(0)
+
     # create dbs
-    bookmarked_data = [(bookmark.url, bookmark.chapter, bookmark.time) for bookmark in data]
+    # bookmarked_data = [(bookmark.url, bookmark.chapter, bookmark.time) for bookmark in data]
     # print(bookmarked_data)
     # bookmarked_names_and_icons = [(bookmark.url, bookmark.url_name, bookmark.favicon_url) for bookmark in data]
 
@@ -54,9 +56,11 @@ if __name__ == '__main__':
 
     dbvh = VisitedHistory()
     # dbvh.reset()
-    # dbvh.create(bookmarked_data)
-    #last_visited_chapters = parser.get_last_visited_supported_chapters_from_history(supported_urls, history, dbvh.get_last_time())
+    # dbvh.create([['https://chapmanganato.to/manga-ma952557', 'Chapter 377', '2024-10-09 15:11:09']])
+
+    # last_visited_chapters = parser.get_last_visited_supported_chapters_from_history(supported_urls, history, dbvh.get_last_time())
     # dbvh.update(last_visited_chapters)
+
 
     dbnms = UrlNamesIcons()
     # dbnms.reset()
@@ -64,5 +68,4 @@ if __name__ == '__main__':
     # print(dbnms.get_last_data())
 
     to_read = parser.get_diff(dbbh.get_last_data(), dbvh.get_last_data(), dbnms.get_last_data())
-    # to_read = parser.get_diff(bookmarked_data, dbvh.get_last_data(), dbnms.get_last_data())
-    print(to_read)
+    # print(to_read)

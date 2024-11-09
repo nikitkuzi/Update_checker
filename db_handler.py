@@ -37,11 +37,12 @@ class DbHandler:
         self._execute(sql, formatted_values)
 
     def create(self, values: list[tuple[str, str, str]]) -> None:
-        sql = f"Insert or ignore into {self.__name} values(?,?,?)"
+        """values: tuple(url,chapter,date)"""
+        sql = f"Insert or replace into {self.__name} values(?,?,?)"
         self._execute(sql, values)
 
     def _execute(self, sql: str,
-                 values: [tuple[tuple[str, str]] | list[tuple[str, str]] | None] = None) \
+                 values: [tuple[tuple[str, str, str]] | list[tuple[str, str, str]] | None] = None) \
             -> [list[tuple[str, str]] | None]:
         with sqlite3.connect(self.__db_name) as conn:
             cur = conn.cursor()
@@ -81,6 +82,9 @@ class BookmarkedHistory(DbHandler):
         super().__init__(self.__name)
 
     def delete_bookmarks(self, bookmarks: list[str]) -> None:
+        """
+        Params:
+        bookmarks list[str]: List of urls to delete from bookmarks"""
         sql = f"pragma foreign_keys = ON;DELETE from {self.__name} where url = (?)"
         self._execute(sql, bookmarks)
 

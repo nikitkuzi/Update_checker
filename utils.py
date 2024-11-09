@@ -6,7 +6,7 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 class SupportedWebsite:
-    __supported = {"reaperscans.com", "chapmanganato.to", "mangakakalot.tv"}
+    __supported = {"chapmanganato.to", "reaperscans.com"}
     __class_to_find_last_chapter = {"chapmanganato.to": "chapter-name text-nowrap"}
     #    req = requests.get("https://api.reaperscans.com/chapter/query?page=1&perPage=30&query=&order=desc&series_id=162")
 

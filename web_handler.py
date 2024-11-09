@@ -52,8 +52,9 @@ class WebHandler:
         stripped_urls = []
         for url in urls:
             splitted = url.split("/")
-            if splitted[2][0] == 'w' and splitted[2][1].isalnum() and splitted[2][2].isalnum():
-                stripped_urls.append(splitted[2][4:])
+            if splitted[2][0] == 'w' and splitted[2][1] == 'w':
+                pos = splitted[2].find('.')
+                stripped_urls.append(splitted[2][pos + 1:])
             else:
                 stripped_urls.append(splitted[2])
         return stripped_urls
@@ -143,14 +144,17 @@ class WebHandler:
             await asyncio.gather(*tasks, return_exceptions=True)
         return tasks
 
-    async def __parse_url(self, url: str, session: ClientSession) -> tuple[str, str, str, str]:
+    async def __parse_url(self, url: str, session: ClientSession, tries: int = 0) -> tuple[str, str, str, str]:
         """Returns named tuple:
         url
         chapter
         url_name
         favicon_url"""
+        # limiter of tries per url
+        if tries > 2:
+            return
         url = yarl.URL(url, encoded=True)
-
+        Result = namedtuple("Result", ["url", "chapter", "url_name", "favicon_url"])
         async with session.get(url=url) as response:
             print(response.status, url)
             await asyncio.sleep(1)
@@ -163,9 +167,9 @@ class WebHandler:
                 res = re.search(self.__chapter_pattern, curr.text).group(0)
             except Exception as e:
                 res = ""
-                print("Error, probably server blocked request")
-                return
-            Result = namedtuple("Result", ["url", "chapter", "url_name", "favicon_url"])
+                print("Error, probably server blocked request, trying once more")
+                return await self.__parse_url(str(url), session, tries+1)
+
 
             # return url, res, soup.title.string, favicon
             return Result(str(url), res, soup.title.string, favicon)
