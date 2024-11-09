@@ -35,18 +35,19 @@ if __name__ == '__main__':
 
     parser = WebHandler()
     bookmarked_urls = [bookmark[0] for bookmark in bookmarks]
-    print(Counter(strip(bookmarked_urls)))
+    # print(Counter(strip(bookmarked_urls)))
     supported_urls = parser.get_supported_urls(bookmarked_urls)
-
+    # print(Counter(bookmarked_urls))
+    # exit(0)
     data = parser.get_bookmarked_data(supported_urls)
-    # data = parser.get_bookmarked_data(['https://reaperscans.com/series/overgeared'])
-    # data = parser.get_bookmarked_data(['https://chapmanganato.to/manga-ma952557'])
-    print(data)
+    # print(data)
+    # for d in data:
+    #     print(d)
+    # exit(0)
 
     # create dbs
-    # bookmarked_data = [(bookmark.url, bookmark.chapter, bookmark.time) for bookmark in data]
-    # print(bookmarked_data)
-    # bookmarked_names_and_icons = [(bookmark.url, bookmark.url_name, bookmark.favicon_url) for bookmark in data]
+    bookmarked_data = [(bookmark.url, bookmark.chapter, bookmark.time) for bookmark in data]
+    bookmarked_names_and_icons = [(bookmark.url, bookmark.url_name, bookmark.favicon_url) for bookmark in data]
 
     dbbh = BookmarkedHistory()
     # dbbh.reset()
@@ -56,8 +57,8 @@ if __name__ == '__main__':
 
     dbvh = VisitedHistory()
     # dbvh.reset()
-    # dbvh.create([['https://chapmanganato.to/manga-ma952557', 'Chapter 377', '2024-10-09 15:11:09']])
-
+    # dbvh.create(bookmarked_data)
+    # print(dbvh.get_last_data())
     # last_visited_chapters = parser.get_last_visited_supported_chapters_from_history(supported_urls, history, dbvh.get_last_time())
     # dbvh.update(last_visited_chapters)
 
@@ -68,4 +69,4 @@ if __name__ == '__main__':
     # print(dbnms.get_last_data())
 
     to_read = parser.get_diff(dbbh.get_last_data(), dbvh.get_last_data(), dbnms.get_last_data())
-    # print(to_read)
+    print(to_read)

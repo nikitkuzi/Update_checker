@@ -21,7 +21,8 @@ from multiprocessing import Pool
 
 class WebHandler:
     # __chapter_pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
-    __chapter_pattern = re.compile(" *[C|c]h(apter|\.).{1}[0-9]+\.*[0-9]*")
+    # __chapter_pattern = re.compile(" *[C|c]h(apter|\.).{1}[0-9]+\.*[0-9]*")
+    __chapter_pattern = re.compile(" *[C|c]h(apter|\.).{1}[0-9]+\.*[0-9]*|[E|e]p.?(isode)?.{1}[0-9]+\.*[0-9]*")
     __favicon_pattern = re.compile("^(shortcut icon|icon)$", re.I)
 
     @time_it
@@ -162,14 +163,16 @@ class WebHandler:
             result = await response.text()
             try:
                 soup = BeautifulSoup(result, "html.parser")
-                curr = soup.find(class_=SupportedWebsite.class_to_find_last_chapter(self.__get_url_names([str(url)])[0]))
+                curr = soup.select_one(SupportedWebsite.class_to_find_last_chapter(self.__get_url_names([str(url)])[0]))
+
                 favicon = soup.find('link', attrs={'rel': self.__favicon_pattern}).get('href')
-                res = re.search(self.__chapter_pattern, curr.text).group(0)
+                if "https" not in favicon:
+                    favicon = "https://" + self.__get_url_names([str(url)])[0] + favicon
+                res = re.search(self.__chapter_pattern, curr.text).group(0).strip()
             except Exception as e:
                 res = ""
                 print("Error, probably server blocked request, trying once more")
-                return await self.__parse_url(str(url), session, tries+1)
-
+                return await self.__parse_url(str(url), session, tries + 1)
 
             # return url, res, soup.title.string, favicon
-            return Result(str(url), res, soup.title.string, favicon)
+            return Result(str(url), res, soup.title.string.strip(), favicon)

@@ -6,8 +6,12 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 class SupportedWebsite:
-    __supported = {"chapmanganato.to", "reaperscans.com"}
-    __class_to_find_last_chapter = {"chapmanganato.to": "chapter-name text-nowrap"}
+    __supported = {"chapmanganato.to", 'mangakakalot.tv', "webtoons.com"}
+    # __supported = {"chapmanganato.to"}
+    # __supported = {"webtoons.com"}
+    __class_to_find_last_chapter = {"chapmanganato.to": "div[class=panel-story-chapter-list]",
+                                    "mangakakalot.tv": "div[class=row]",
+                                    "webtoons.com":"li span[class=subj]"}
     #    req = requests.get("https://api.reaperscans.com/chapter/query?page=1&perPage=30&query=&order=desc&series_id=162")
 
     @classmethod
@@ -36,4 +40,4 @@ def strip_chapter(chapter: str) -> str:
 
 def format_chapter(chapter: str) -> str:
     """Removes dashes and spaces from the given chapter"""
-    return chapter.replace('-', ' ').replace('  ', ' ').capitalize()
+    return chapter.replace('-', ' ').replace('  ', ' ').replace('_', ' ').capitalize()
