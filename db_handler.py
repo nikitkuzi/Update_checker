@@ -12,7 +12,7 @@ class DbHandler:
 
     def __init__(self, name: str):
         self.__name = name
-        with sqlite3.connect(self.__name) as conn:
+        with sqlite3.connect(self.__db_name) as conn:
             self.__connection = conn
         self.__create_dbs()
 

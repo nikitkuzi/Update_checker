@@ -45,18 +45,27 @@ class WebHandler:
     def get_last_visited_supported_chapters_from_history(self, supported_urls: list[str],
                                                          history: list[tuple[str, str, str]],
                                                          last_updated_date: str) -> list[tuple[str, str, str]]:
+        """Return list of latest chapters read.
+        It will only look for chapters that you are actually visited,
+        not counting main page.
+        If you have not visited any chapters, e.g. you just added manga to bookmarks
+        then it will put some default values to it
+        """
+        # TODO: change chapter number detection from url to header
         supported_set = set(supported_urls)
         date_format = DATE_FORMAT
         last_updated_date = datetime.strptime(last_updated_date, date_format)
         result = []
         for target_url in supported_set:
+            id_part_of_target_url = target_url.split('/')[-1]
             old = False
+            count_main_page = 0
             for his in history:
                 if datetime.strptime(his[1], date_format) < last_updated_date:
                     # handled all, dont need to check previous history
                     old = True
                     break
-                if target_url in his[0]:
+                if id_part_of_target_url in his[0]:
                     # last visited is not main page
                     if target_url != his[0] and "chapter" in his[0].lower():
                         result.append((target_url, utils.format_chapter(utils.strip_chapter(his[0])), his[1]))
@@ -64,7 +73,10 @@ class WebHandler:
                     # last visited is main page
                     # it means that the url in the DB didnt change
                     else:
-                        continue
+                        count_main_page += 1
+                        if count_main_page > 10:
+                            old = True
+                            break
             # if we have bookmark which havent read once,
             # just add some default value so we can start tracking it
             else:
@@ -94,8 +106,6 @@ class WebHandler:
         bookmarked: list[tuple[url, chapter, date]]
         history: list[tuple[url, chapter, date]]
         url_names_and_favicon: list[tuple[url, url_name, favicon_name]]
-        Return type:
-        ChapterInfo
         """
         # convert data to dict for better integrity
         bookmarked_dict = {url: (chapter, date) for url, chapter, date in bookmarked}
@@ -121,11 +131,7 @@ class WebHandler:
     @time_it
     def get_bookmarked_data(self, urls: list[str]) -> list[ChapterInfo]:
         """Return bookmarked data as a list of tuples with fields:
-        url
-        chapter
-        time
-        url_name
-        favicon_url"""
+        """
         # shuffle to prevent form accessing same website multiple times in a row
         # to reduce the chance of being blocked
         random.shuffle(urls)
@@ -153,17 +159,20 @@ class WebHandler:
         return tasks
 
     async def __parse_url(self, url: str, session: ClientSession, tries: int = 0) -> ChapterInfo | None:
-        """Returns named tuple:
-        url
-        chapter
-        url_name
-        favicon_url"""
+        """Scrapes a URL"""
         # limiter of tries per url
         if tries > 2:
+            logger.info(f"Failed to get response 3 times from {url}")
             return
         url = yarl.URL(url, encoded=True)
+        if tries > 0:
+            await asyncio.sleep(1)
         async with session.get(url=url) as response:
             result = await response.text()
+            if str(url) != response.url:
+                url = response.url
+            if response.status != 200:
+                return await self.__parse_url(str(url), session, tries + 1)
             try:
                 soup = BeautifulSoup(result, "html.parser")
                 response_processed = soup.select_one(
@@ -173,8 +182,8 @@ class WebHandler:
                     favicon = "https://" + self.__get_url_names([str(url)])[0] + favicon
                 chapter = re.search(self.__chapter_pattern, response_processed.text).group(0).strip()
             except Exception as e:
-                print("Error, probably server blocked request, trying once more")
-                logger.error(f"Failed to scrape {str(url)} {tries + 1} times")
+                print("Error, probably server blocked request, trying once more", url)
+                logger.error(f"Failed to scrape {str(url)} {tries + 1} times, error: {e}")
                 return await self.__parse_url(str(url), session, tries + 1)
             parser_result = ChapterInfo(url=str(url), chapter=chapter, url_name=soup.title.string.strip(),
                                         favicon_url=favicon)

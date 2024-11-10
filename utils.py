@@ -7,12 +7,13 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 class SupportedWebsite:
-    __supported = {"chapmanganato.to"}
-    # __supported = {"chapmanganato.to"}
-    # __supported = {"webtoons.com"}
-    __class_to_find_last_chapter = {"chapmanganato.to": "div[class=panel-story-chapter-list]",
+    __supported = {"chapmanganato.to", "chapmanganato.com", "mangakakalot.tv"}
+    # __supported = {"arvencomics.com"}
+    __class_to_find_last_chapter = {"chapmanganato.to": "ul[class=row-content-chapter] li[class=a-h]",
                                     "mangakakalot.tv": "div[class=row]",
-                                    "webtoons.com":"li span[class=subj]"}
+                                    "webtoons.com": "li span[class=subj]",
+                                    "mangakakalot.tv" : "div[class=chapter-list] div[class=row]",
+                                    "arvencomics.com": "div[id=chapters] a"}
     #    req = requests.get("https://api.reaperscans.com/chapter/query?page=1&perPage=30&query=&order=desc&series_id=162")
 
     @classmethod
