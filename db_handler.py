@@ -98,6 +98,10 @@ class BookmarkedHistory(DbHandler):
         """Returns list of tuples(url, chapter, date)"""
         return super().get_last_data()
 
+    def get_urls(self) -> list[str]:
+        data = self.get_last_data()
+        return [dat[0] for dat in data]
+
 
 class VisitedHistory(DbHandler):
     """DB for handling history of visited links
