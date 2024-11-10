@@ -12,6 +12,8 @@ class DbHandler:
 
     def __init__(self, name: str):
         self.__name = name
+        with sqlite3.connect(self.__name) as conn:
+            self.__connection = conn
         self.__create_dbs()
 
     def reset(self) -> None:
@@ -48,18 +50,18 @@ class DbHandler:
     def _execute(self, sql: str,
                  values: [tuple[tuple[str, str, str]] | list[tuple[str, str, str]] | None] = None) \
             -> [list[tuple[str, str]] | None]:
-        with sqlite3.connect(self.__db_name) as conn:
-            cur = conn.cursor()
-            if ";" in sql:
-                sql = sql.split(";")
-                cur.execute(sql[0])
-                sql = sql[1]
-            if values:
-                cur.executemany(sql, values)
-            else:
-                cur.execute(sql)
-            conn.commit()
-            res = cur.fetchall()
+
+        cur = self.__connection.cursor()
+        if ";" in sql:
+            sql = sql.split(";")
+            cur.execute(sql[0])
+            sql = sql[1]
+        if values:
+            cur.executemany(sql, values)
+        else:
+            cur.execute(sql)
+        self.__connection.commit()
+        res = cur.fetchall()
         if sql.split()[0].lower() == "select":
             return res
         return None
