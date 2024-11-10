@@ -17,7 +17,8 @@ from bs4 import BeautifulSoup
 import requests
 from datetime import datetime, timedelta
 from multiprocessing import Pool
-
+import logging
+logger = logging.getLogger(__name__)
 
 class WebHandler:
     # __chapter_pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
@@ -157,8 +158,7 @@ class WebHandler:
         url = yarl.URL(url, encoded=True)
         Result = namedtuple("Result", ["url", "chapter", "url_name", "favicon_url"])
         async with session.get(url=url) as response:
-            print(response.status, url)
-            await asyncio.sleep(1)
+            # await asyncio.sleep(1)
 
             result = await response.text()
             try:
@@ -172,7 +172,8 @@ class WebHandler:
             except Exception as e:
                 res = ""
                 print("Error, probably server blocked request, trying once more")
+                logger.error(f"Failed to scrape {str(url)} {tries+1} times")
                 return await self.__parse_url(str(url), session, tries + 1)
-
             # return url, res, soup.title.string, favicon
+            logger.info(f"Scraped {Result(str(url), res, soup.title.string.strip(), favicon)}")
             return Result(str(url), res, soup.title.string.strip(), favicon)

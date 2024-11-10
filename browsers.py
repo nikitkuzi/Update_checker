@@ -6,7 +6,8 @@ import sqlite3
 from collections import deque
 from pathlib import Path
 import platform
-
+import logging
+logger = logging.getLogger(__name__)
 
 class Browser(abc.ABC):
     __platform_paths: dict[str, [str | None]]
@@ -106,6 +107,7 @@ class Chrome(Browser):
             with open(self.__path_to_bookmarks, encoding="utf-8") as file:
                 data = json.load(file)
         except Exception as e:
+            logger.critical(f"Could not locate or read bookmark file")
             raise e
 
         bookmarks = []

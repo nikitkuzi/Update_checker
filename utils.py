@@ -1,7 +1,8 @@
 import platform
 import time
 import re
-
+import logging
+logger = logging.getLogger(__name__)
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
@@ -27,7 +28,7 @@ def time_it(func):
     def wrapper(*args, **kwargs):
         curr_time = time.time()
         res = func(*args, **kwargs)
-        print(f"{func.__name__} took {time.time() - curr_time}ms to run")
+        logger.info(f"{func.__name__} took {time.time() - curr_time}ms to run")
         return res
 
     return wrapper

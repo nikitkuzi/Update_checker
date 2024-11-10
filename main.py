@@ -11,8 +11,12 @@ from db_handler import BookmarkedHistory, VisitedHistory, UrlNamesIcons
 from utils import DATE_FORMAT
 from fastapi import FastAPI
 import time
+import logging
 
 import asyncio
+
+
+
 
 def strip(urls):
     stripped_urls = []
@@ -27,7 +31,9 @@ def strip(urls):
 
 if __name__ == '__main__':
     folders = ['manga11', 'manga', 'manga1', 'manga2', 'manga3', 'manga4', 'manga5', 'manga6', 'manga7']
-
+    logger = logging
+    logger.basicConfig(filename='log.log', level=logging.DEBUG,
+                       format='%(levelname)s: %(name)s - %(asctime)s - %(message)s', datefmt='%d/%b/%y %H:%M:%S')
     browser = Chrome()
     browser.set_bookmark_folders(folders)
     bookmarks = browser.get_bookmarks()
@@ -37,13 +43,8 @@ if __name__ == '__main__':
     bookmarked_urls = [bookmark[0] for bookmark in bookmarks]
     # print(Counter(strip(bookmarked_urls)))
     supported_urls = parser.get_supported_urls(bookmarked_urls)
-    # print(Counter(bookmarked_urls))
-    # exit(0)
+
     data = parser.get_bookmarked_data(supported_urls)
-    # print(data)
-    # for d in data:
-    #     print(d)
-    # exit(0)
 
     # create dbs
     bookmarked_data = [(bookmark.url, bookmark.chapter, bookmark.time) for bookmark in data]
