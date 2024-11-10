@@ -30,6 +30,7 @@ def strip(urls):
     return stripped_urls
 
 if __name__ == '__main__':
+    # config
     folders = ['manga11', 'manga', 'manga1', 'manga2', 'manga3', 'manga4', 'manga5', 'manga6', 'manga7']
     logger = logging
     logger.basicConfig(filename='log.log', level=logging.DEBUG,
@@ -49,19 +50,22 @@ if __name__ == '__main__':
     # create dbs
     bookmarked_data = [(bookmark.url, bookmark.chapter, bookmark.time) for bookmark in data]
     bookmarked_names_and_icons = [(bookmark.url, bookmark.url_name, bookmark.favicon_url) for bookmark in data]
+    print(bookmarked_data)
 
     dbbh = BookmarkedHistory()
     # dbbh.reset()
     # dbbh.create(bookmarked_data)
-    # dbbh.update(bookmarked_data)
-    # print(dbbh.get_last_data())
-
+    dbbh.update(bookmarked_data)
+    print(dbbh.get_last_data())
+    exit(0)
     dbvh = VisitedHistory()
     # dbvh.reset()
     # dbvh.create(bookmarked_data)
-    # print(dbvh.get_last_data())
-    # last_visited_chapters = parser.get_last_visited_supported_chapters_from_history(supported_urls, history, dbvh.get_last_time())
+    print(dbvh.get_last_data())
+    last_visited_chapters = parser.get_last_visited_supported_chapters_from_history(supported_urls, history, dbvh.get_last_time())
+    print(last_visited_chapters)
     # dbvh.update(last_visited_chapters)
+    # dbvh.update([('https://ww3.mangakakalot.tv/manga/manga-ak977919', 'Chapter 89', '2024-10-10 12:57:41')])
 
 
     dbnms = UrlNamesIcons()

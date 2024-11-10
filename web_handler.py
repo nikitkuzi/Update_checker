@@ -5,11 +5,10 @@ import urllib
 import asyncio
 from asyncio import Task
 from collections import namedtuple
-
+from pydantic import BaseModel, Field
 import aiohttp
 import yarl
 from aiohttp import ClientSession
-
 import utils
 from utils import time_it, DATE_FORMAT, SupportedWebsite
 
@@ -18,7 +17,23 @@ import requests
 from datetime import datetime, timedelta
 from multiprocessing import Pool
 import logging
+
 logger = logging.getLogger(__name__)
+
+
+class ChapterInfo(BaseModel):
+    """Fields
+    url: str
+    chapter: str
+    time: str????
+    url_name: str
+    favicon_url: str"""
+    url: str
+    chapter: str
+    time: str = None
+    url_name: str
+    favicon_url: str
+
 
 class WebHandler:
     # __chapter_pattern = re.compile("[C|c]hapter.{1}[0-9]+\.*[0-9]*")
@@ -47,9 +62,12 @@ class WebHandler:
                     else:
                         continue
                     break
+            # if result[-1][0] != target_url:
+
         return result
 
-    def __get_url_names(self, urls: list[str]) -> list[str]:
+    @staticmethod
+    def __get_url_names(urls: list[str]) -> list[str]:
         """Format urls and return domain name"""
         stripped_urls = []
         for url in urls:
@@ -61,28 +79,31 @@ class WebHandler:
                 stripped_urls.append(splitted[2])
         return stripped_urls
 
-    def get_diff(self, bookmarked: list[tuple[str, str, str]], history: list[tuple[str, str, str]],
-                 names_list: list[tuple[str, str]]) -> list[
-        tuple[str, str, str, str, str]]:
-        """Returns the difference between last read and new chapters as a list of tuples with fields:
-        url
-        chapter
-        time
-        url_name
-        favicon_url
+    @staticmethod
+    def get_diff(bookmarked: list[tuple[str, str, str]], history: list[tuple[str, str, str]],
+                 url_names_and_favicon: list[tuple[str, str, str]]) -> list[ChapterInfo]:
+        """Returns the difference between last read and new chapters
+        Params:
+        bookmarked: list[tuple[url, chapter, date]]
+        history: list[tuple[url, chapter, date]]
+        url_names_and_favicon: list[tuple[url, url_name, favicon_name]]
+        Return type:
+        ChapterInfo
         """
-        new = {url: (chapter, date) for url, chapter, date in bookmarked}
-        old = {url: (chapter, date) for url, chapter, date in history}
-        names = {url: (name, icon) for url, name, icon in names_list}
+        # convert data to dict for better integrity
+        bookmarked_dict = {url: (chapter, date) for url, chapter, date in bookmarked}
+        history_dict = {url: (chapter, date) for url, chapter, date in history}
+        names = {url: (name, icon) for url, name, icon in url_names_and_favicon}
         diff = {}
-        for url, data in new.items():
-            if url in old:
-                if old[url][0] != data[0]:
+        for url, data in bookmarked_dict.items():
+            if url in history_dict:
+                if history_dict[url][0] != data[0]:
                     diff[url] = (*data, *names[url])
-        return [(url, *data) for url, data in diff.items()]
+        return [ChapterInfo(url=url, chapter=data[0], time=data[1], url_name=data[2], favicon_url=data[3]) for url, data
+                in diff.items()]
 
     def get_supported_urls(self, urls) -> list[str]:
-        """Returns the list of supported"""
+        """Returns the list of supported urls"""
         stripped_urls = self.__get_url_names(urls)
         supported = []
         for full, strip in zip(urls, stripped_urls):
@@ -90,27 +111,8 @@ class WebHandler:
                 supported.append(full)
         return supported
 
-    # def get_last_visited_urls_with_date(self, supported_urls: list[str], history: list[tuple[str, str, str]]) -> list[
-    #     tuple[str, str, str]]:
-    #     supported_history_set = set(supported_urls)
-    #     last_visited = []
-    #     default_date_for_url_not_found_in_history = (datetime.now().replace(microsecond=0) - timedelta(days=365)).strftime(
-    #         DATE_FORMAT)
-    #     for i in range(len(history)):
-    #         if not supported_history_set:
-    #             # handled all
-    #             break
-    #         if history[i][0] in supported_history_set:
-    #             supported_history_set.remove(history[i][0])
-    #             last_visited.append((history[i][0], "", history[i][1]))
-    #     # if there are some bookmarked urls which are not in browser history
-    #     # just add them with some default value
-    #     for url in supported_history_set:
-    #         last_visited.append((url, "", default_date_for_url_not_found_in_history))
-    #     return last_visited
-
     @time_it
-    def get_bookmarked_data(self, urls: list[str]) -> list[tuple[str, str, str, str, str]]:
+    def get_bookmarked_data(self, urls: list[str]) -> list[ChapterInfo]:
         """Return bookmarked data as a list of tuples with fields:
         url
         chapter
@@ -121,19 +123,16 @@ class WebHandler:
         # to reduce the chance of being blocked
         random.shuffle(urls)
         current_time = datetime.now().replace(microsecond=0)
-        # return [(task.result()[0], task.result()[1], str(current_time), task.result()[2], task.result()[3]) for task in
-        #         asyncio.run(self.__get_last_chapters2(urls)) if
-        #         task.result()[1] != ""]
         data = []
-        Bookmark = namedtuple("Bookmark", ["url", "chapter", "time", "url_name", "favicon_url"])
         for task in asyncio.run(self.__get_last_chapters(urls)):
             if task.result():
                 data.append(
-                    Bookmark(task.result().url, task.result().chapter, str(current_time), task.result().url_name,
-                             task.result().favicon_url))
+                    ChapterInfo(url=task.result().url, chapter=task.result().chapter, time=str(current_time),
+                                url_name=task.result().url_name,
+                                favicon_url=task.result().favicon_url))
         return data
 
-    async def __get_last_chapters(self, urls: list[str]) -> list[Task[[tuple[str, str]]]]:
+    async def __get_last_chapters(self, urls: list[str]) -> list[Task[ChapterInfo]]:
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
         headers = {"User-Agent": user_agent}
         my_conn = aiohttp.TCPConnector(limit=5)
@@ -141,12 +140,12 @@ class WebHandler:
             tasks = []
             for url in urls:
                 task = asyncio.create_task(self.__parse_url(url=url, session=session))
-                # print(task.result())
-                tasks.append(task)
+                if task:
+                    tasks.append(task)
             await asyncio.gather(*tasks, return_exceptions=True)
         return tasks
 
-    async def __parse_url(self, url: str, session: ClientSession, tries: int = 0) -> tuple[str, str, str, str]:
+    async def __parse_url(self, url: str, session: ClientSession, tries: int = 0) -> ChapterInfo | None:
         """Returns named tuple:
         url
         chapter
@@ -156,24 +155,21 @@ class WebHandler:
         if tries > 2:
             return
         url = yarl.URL(url, encoded=True)
-        Result = namedtuple("Result", ["url", "chapter", "url_name", "favicon_url"])
         async with session.get(url=url) as response:
-            # await asyncio.sleep(1)
-
             result = await response.text()
             try:
                 soup = BeautifulSoup(result, "html.parser")
-                curr = soup.select_one(SupportedWebsite.class_to_find_last_chapter(self.__get_url_names([str(url)])[0]))
-
+                response_processed = soup.select_one(
+                    SupportedWebsite.class_to_find_last_chapter(self.__get_url_names([str(url)])[0]))
                 favicon = soup.find('link', attrs={'rel': self.__favicon_pattern}).get('href')
                 if "https" not in favicon:
                     favicon = "https://" + self.__get_url_names([str(url)])[0] + favicon
-                res = re.search(self.__chapter_pattern, curr.text).group(0).strip()
+                chapter = re.search(self.__chapter_pattern, response_processed.text).group(0).strip()
             except Exception as e:
-                res = ""
                 print("Error, probably server blocked request, trying once more")
-                logger.error(f"Failed to scrape {str(url)} {tries+1} times")
+                logger.error(f"Failed to scrape {str(url)} {tries + 1} times")
                 return await self.__parse_url(str(url), session, tries + 1)
-            # return url, res, soup.title.string, favicon
-            logger.info(f"Scraped {Result(str(url), res, soup.title.string.strip(), favicon)}")
-            return Result(str(url), res, soup.title.string.strip(), favicon)
+            parser_result = ChapterInfo(url=str(url), chapter=chapter, url_name=soup.title.string.strip(),
+                                        favicon_url=favicon)
+            logger.info(f"Scraped {parser_result}")
+            return parser_result

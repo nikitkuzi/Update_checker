@@ -2,7 +2,9 @@ import abc
 import sqlite3
 import os
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class DbHandler:
     __name = None
@@ -89,6 +91,10 @@ class BookmarkedHistory(DbHandler):
         sql = f"pragma foreign_keys = ON;DELETE from {self.__name} where url = (?)"
         self._execute(sql, bookmarks)
 
+    def get_last_data(self) -> list[tuple[str, str, str]]:
+        """Returns list of tuples(url, chapter, date)"""
+        return super().get_last_data()
+
 
 class VisitedHistory(DbHandler):
     """DB for handling history of visited links
@@ -101,19 +107,34 @@ class VisitedHistory(DbHandler):
     def __init__(self):
         super().__init__(self.__name)
 
+    def get_last_data(self) -> list[tuple[str, str, str]]:
+        """Returns list of tuples(url, chapter, date)"""
+        return super().get_last_data()
+
 
 class UrlNamesIcons(DbHandler):
     """Fields:
     url
     url_name
-    icon_url"""
+    favicon_url"""
     __name = "url_names"
 
     def __init__(self):
         super().__init__(self.__name)
 
-    def update(self) -> None:
-        pass
+    def create(self, values: list[tuple[str, str, str]]) -> None:
+        """values: tuple(url,url_name,favicon_url)"""
+        super().create(values)
+
+    def update(self, values) -> None:
+        """values: tuple(url,url_name,favicon_url)"""
+        sql = f"update {self.__name} set favicon_url = ?, url_name = ? where url = ?"
+        formatted_values = [(value[::-1]) for value in values]
+        super()._execute(sql, formatted_values)
+
+    def get_last_data(self) -> list[tuple[str, str, str]]:
+        """Returns list of tuples(url, url_name, favicon_url)"""
+        return super().get_last_data()
 
     def get_last_time(self) -> None:
-        pass
+        raise NotImplemented
