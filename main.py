@@ -50,21 +50,23 @@ if __name__ == '__main__':
     # create dbs
     bookmarked_data = [(bookmark.url, bookmark.chapter, bookmark.time) for bookmark in data]
     bookmarked_names_and_icons = [(bookmark.url, bookmark.url_name, bookmark.favicon_url) for bookmark in data]
-    print(bookmarked_data)
+
 
     dbbh = BookmarkedHistory()
     # dbbh.reset()
     # dbbh.create(bookmarked_data)
-    dbbh.update(bookmarked_data)
-    print(dbbh.get_last_data())
-    exit(0)
+    # dbbh.update(bookmarked_data)
+    # print(dbbh.get_last_data())
+    # exit(0)
+
     dbvh = VisitedHistory()
     # dbvh.reset()
     # dbvh.create(bookmarked_data)
-    print(dbvh.get_last_data())
+    # dbvh.update([('https://ww7.mangakakalot.tv/manga/manga-kw988331', 'Chapter 166','2024-10-10 14:33:00')])
     last_visited_chapters = parser.get_last_visited_supported_chapters_from_history(supported_urls, history, dbvh.get_last_time())
     print(last_visited_chapters)
-    # dbvh.update(last_visited_chapters)
+    dbvh.update(last_visited_chapters)
+    # dbvh.update([('https://chapmanganato.to/manga-ma952557', 'Chapter 377', '2024-11-07 15:02:45')])
     # dbvh.update([('https://ww3.mangakakalot.tv/manga/manga-ak977919', 'Chapter 89', '2024-10-10 12:57:41')])
 
 
@@ -72,6 +74,7 @@ if __name__ == '__main__':
     # dbnms.reset()
     # dbnms.create(bookmarked_names_and_icons)
     # print(dbnms.get_last_data())
+
 
     to_read = parser.get_diff(dbbh.get_last_data(), dbvh.get_last_data(), dbnms.get_last_data())
     print(to_read)

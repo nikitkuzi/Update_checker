@@ -30,14 +30,15 @@ class DbHandler:
 
     def get_last_time(self) -> str:
         sql = f"select max(date) from {self.__name}"
-        return self._execute(sql)[0][0]
-        # return '2024-03-11 21:19:17'
+        # return self._execute(sql)[0][0]
+        return '2024-03-11 21:19:17'
 
-    def update(self, values: [tuple[tuple[str, str, str]] | list[tuple[str, str, str]]]) -> None:
+    def update(self, values: tuple[tuple[str, str, str]] | list[tuple[str, str, str]]) -> None:
         """values: tuple(url,chapter,date)"""
-        sql = f"update {self.__name} set date = ?, chapter = ? where url = ?"
-        formatted_values = [(value[::-1]) for value in values]
-        self._execute(sql, formatted_values)
+        # sql = f"update {self.__name} set date = ?, chapter = ? where url = ?"
+        # formatted_values = [(value[::-1]) for value in values]
+        # self._execute(sql, formatted_values)
+        self.create(values)
 
     def create(self, values: list[tuple[str, str, str]]) -> None:
         """values: tuple(url,chapter,date)"""
@@ -128,9 +129,10 @@ class UrlNamesIcons(DbHandler):
 
     def update(self, values) -> None:
         """values: tuple(url,url_name,favicon_url)"""
-        sql = f"update {self.__name} set favicon_url = ?, url_name = ? where url = ?"
-        formatted_values = [(value[::-1]) for value in values]
-        super()._execute(sql, formatted_values)
+        # sql = f"update {self.__name} set favicon_url = ?, url_name = ? where url = ?"
+        # formatted_values = [(value[::-1]) for value in values]
+        # super()._execute(sql, formatted_values)
+        self.create(values)
 
     def get_last_data(self) -> list[tuple[str, str, str]]:
         """Returns list of tuples(url, url_name, favicon_url)"""

@@ -47,23 +47,30 @@ class WebHandler:
                                                          last_updated_date: str) -> list[tuple[str, str, str]]:
         supported_set = set(supported_urls)
         date_format = DATE_FORMAT
+        last_updated_date = datetime.strptime(last_updated_date, date_format)
         result = []
         for target_url in supported_set:
+            old = False
             for his in history:
-                if datetime.strptime(his[1], date_format) < datetime.strptime(last_updated_date, date_format):
+                if datetime.strptime(his[1], date_format) < last_updated_date:
                     # handled all, dont need to check previous history
+                    old = True
                     break
                 if target_url in his[0]:
                     # last visited is not main page
                     if target_url != his[0] and "chapter" in his[0].lower():
                         result.append((target_url, utils.format_chapter(utils.strip_chapter(his[0])), his[1]))
+                        break
                     # last visited is main page
                     # it means that the url in the DB didnt change
                     else:
                         continue
-                    break
-            # if result[-1][0] != target_url:
-
+            # if we have bookmark which havent read once,
+            # just add some default value so we can start tracking it
+            else:
+                old = True
+            if old:
+                result.append((target_url, "Chapter 0", history[0][1]))
         return result
 
     @staticmethod

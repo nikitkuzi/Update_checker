@@ -7,7 +7,7 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 class SupportedWebsite:
-    __supported = {"chapmanganato.to", 'mangakakalot.tv', "webtoons.com"}
+    __supported = {"chapmanganato.to"}
     # __supported = {"chapmanganato.to"}
     # __supported = {"webtoons.com"}
     __class_to_find_last_chapter = {"chapmanganato.to": "div[class=panel-story-chapter-list]",
