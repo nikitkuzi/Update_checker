@@ -1,19 +1,9 @@
-from collections import Counter
-from datetime import datetime, timedelta
-
-import requests
-
-import utils
 from browsers import Chrome
 from web_handler import WebHandler
-from browser_history.generic import Browser
 from db_handler import BookmarkedHistory, VisitedHistory, UrlNamesIcons
-from utils import DATE_FORMAT
-from fastapi import FastAPI
-import time
 import logging
 from web_handler import ChapterInfo
-import asyncio
+
 
 
 def strip_urls(urls):

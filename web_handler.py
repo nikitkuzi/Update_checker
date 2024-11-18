@@ -1,10 +1,7 @@
 import random
 import re
-import time
-import urllib
 import asyncio
 from asyncio import Task
-from collections import namedtuple
 from pydantic import BaseModel, Field
 import aiohttp
 import yarl
@@ -13,9 +10,7 @@ import utils
 from utils import time_it, DATE_FORMAT, SupportedWebsite
 
 from bs4 import BeautifulSoup
-import requests
 from datetime import datetime, timedelta
-from multiprocessing import Pool
 import logging
 
 logger = logging.getLogger(__name__)

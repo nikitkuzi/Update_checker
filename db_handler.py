@@ -1,6 +1,4 @@
-import abc
 import sqlite3
-import os
 import logging
 
 logger = logging.getLogger(__name__)

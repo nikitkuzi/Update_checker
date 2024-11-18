@@ -1,4 +1,3 @@
-import platform
 import time
 import re
 import logging
