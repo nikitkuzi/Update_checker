@@ -1,10 +1,10 @@
 import sqlite3
 import logging
 from itertools import chain
-
+import timeit
 from requests import session
-from sqlalchemy import create_engine, MetaData, ForeignKey, String, select
-from sqlalchemy.orm import declarative_base, Mapped, sessionmaker, relationship
+from sqlalchemy import create_engine, MetaData, ForeignKey, String, select, update
+from sqlalchemy.orm import declarative_base, Mapped, sessionmaker, relationship, DeclarativeMeta, Session
 from sqlalchemy.testing.schema import mapped_column
 
 logger = logging.getLogger(__name__)
@@ -66,24 +66,59 @@ def create():
 
 
 def test():
-    create()
+    # create()
     engine = create_engine("sqlite:///data.db")
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
+    print(VisitedHistory)
+    print(type(VisitedHistory))
+    return
     with Session.begin() as session:
         # test = select(BookmarkedHistory).where(BookmarkedHistory.url=="https://chapmanganato.to/manga-qm951521")
         # print(test)
         # res = session.execute(test)
         # print(res.first())
-        bookmark = session.query(VisitedHistory).where(VisitedHistory.url=="https://arvencomics.com/series/d11b4be7ae1/").first()
+        bookmark = session.query(BookmarkedHistory).where(BookmarkedHistory.url=="https://arvencomics.com/series/d11b4be7ae1/").first()
         print(bookmark)
-        # session.delete(bookmark)
+        session.delete(bookmark)
         # for book in session.query(VisitedHistory).all():
         #     print(book)
 
 
+class DbHandler:
+    __connection = None
+
+    def __init__(self, table: Base) -> None:
+        if self.__connection is None:
+            self.__connect()
+        self.table = table
+
+    @classmethod
+    def __connect(cls):
+        try:
+            engine = create_engine("sqlite:///data.db")
+        except Exception as error:
+            logger.critical(f"Failed to establish connection. {error}")
+        else:
+            Base.metadata.create_all(engine)
+            # cls.__connection = sessionmaker(bind=engine)
+            cls.__connection = Session(engine).begin()
+            logger.info("Connection established")
+
+    def update(self):
+        pass
+
+    def test(self):
+        # with self.__connection.begin() as session:
+
+        self.__connection.execute(update(BookmarkedHistory).where(BookmarkedHistory.url == "https://ww8.mangakakalot.tv/manga/manga-it985502").values(chapter="Chapter 0"))
+        self.__connection.commit()
+
+
 if __name__ == "__main__":
-    test()
+    # test()
+    t = DbHandler(VisitedHistory)
+    print(timeit.timeit(t.test, number=10000))
 
 
 
